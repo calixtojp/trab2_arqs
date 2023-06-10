@@ -9,7 +9,7 @@
 #define MAX_NOME_ARQ 50
 #define TAM_MAX_NOME 50
 #define TAM_MAX_VALOR 50
-
+#define campoIndexado "idCrime"
 struct ArqDados{
     char nomeArqDados[MAX_NOME_ARQ];//guarda o nome do arquivo de dados
     FILE *arqDados;
@@ -105,6 +105,14 @@ int getTamCabecalhoDados(ArqDados_t *arq_dados){
     return len_cabecalho_dados();
 }
 
+void printa_busca(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro, InfoDados_t *alteracoes,long int byteOffSet){
+    //funcao que ignora os campos do tipo void para que toda as funções de 
+    //'acao' em 'processaRegistros()' sejam do mesmo tipo, no caso o 'FncAcao'
+
+    //Em seguida, printa os campos de um registro
+    mostrar_campos(registro);
+}
+
 int get_nroRegTotal(ArqDados_t *arq_dados){
     return get_nroRegArq(arq_dados->cabecalhoDados);
 }
@@ -172,7 +180,7 @@ void desalocar_InfoDados(InfoDados_t *informacao){
     free(informacao);
 }
 
-void achouReg(void *arq_index, int flag){
+void achouReg(void *arvore, int flag){
     if(flag == 0){
         printf("Registro inexistente.\n");
     }
@@ -194,23 +202,33 @@ int testarStatusDados(ArqDados_t *arq_dados){
 	return 0;
 }
 
-void processaRegistros(ArqDados_t *arq_dados, ArqIndex_t *arq_index, InfoDados_t *criterios, InfoDados_t *alteracoes, 
+int busca_por_indexado(InfoDados_t *criterios){
+    /*Função que, se o vetor de nomes (lido da entrada da busca) 
+    contiver o nome do campo indexado (idCrime), retorna o índice dessa string no vetor. 
+    Caso contrário, retorna -1.*/
+
+    /*Essa função determina se deve ser realizada 
+    busca pela árvore B* ou sequencial no arquivo de dados.*/
+
+    for(int i=0; i<criterios->qtd_crit; i++){
+        if(strcmp(campoIndexado,criterios->nomes[i])==0){
+            return i;
+        }
+    }
+    return -1;
+}
+
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, InfoDados_t *alteracoes, 
                         FncAcao acao, FncFinaliza final){
-    /*Funcao que define se a busca sera binaria no arquivo de indice ou sequencial no arquivo de dados e encontra os registros. 
+    /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
     Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
 
-    //Alocar um vetor temporário, o qual irei editar ao longo do processo
-    criarVetTemp(arq_index, get_qtdReg(arq_index->cabecalhoIndex));
+    int posicao_criterio = busca_por_indexado(criterios);
+    
 
-    int existe = existe_index(criterios,arq_index);
-    /*Se existe arquivo de indice para um dos campos a serem buscados,
-    a variável 'existe' recebe o indice do nome desse campo no vet_nomes.
-    Se não existe, a variável recebe -1.*/
-
-    if(existe >= 0 ){
-        /*se existe arquivo de index para um dos campos que se deseja 
-        buscar, faz-se busca binária no arquivo de indice*/
-        busca_bin_index(arq_index,arq_dados,existe,criterios,alteracoes,acao,final);
+    if(posicao_criterio >= 0 ){
+        /*se a árvore B* indexa algum dos critérios de busca, então faço a busca usando-a.*/
+        busca_arvore(arvore,arq_dados,posicao_criterio,criterios,alteracoes,acao,final);
     }else{
         //se não, faz-se busca sequencial no arquivo de dados
     
@@ -221,11 +239,9 @@ void processaRegistros(ArqDados_t *arq_dados, ArqIndex_t *arq_index, InfoDados_t
         busca_seq_dados(arq_dados, arq_index, criterios,alteracoes,acao,final);
     }
 
-    //desalocar o vetor temporário
-    apagarVetTemp(arq_index);
 }
 
-void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave, InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
+void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave, InfoBusca_t *criterios, InfoBusca_t *alteracoes,FncAcao acao, FncFinaliza final){
 
     //descubro o tipo de dado indexado (0 inteiro, 1 string)
     int tipoDado = arq_index->tipoDadoInt;
@@ -250,7 +266,28 @@ void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave
     percorrer_index(fncsGetByteOffSet[tipoDado], pos_prim, qtd_reg_val, arq_dados, arq_index, criterios, alteracoes,acao, final);
 }
 
-void busca_seq_dados(ArqDados_t *arq_dados, ArqIndex_t *arq_index,InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
+long long int busca_arvore_rec(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDados_t *criterios, InfoDados_t *alteracoes, FncAcao acao, FncFinaliza final){
+    /*
+    if(RRN_atual == -1){//critério de parada
+        return -1;
+    }
+
+    fseek(arvore, RRN_atual * getTamPagina());
+    no_arvore_t no_aux = ler_pagina_disco();
+
+    busca_bin(no_aux);
+
+    */
+}
+
+void busca_arvore(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDados_t *criterios, InfoDados_t *alteracoes, FncAcao acao, FncFinaliza final){
+    /*
+    RRN_raiz = get_noRaiz(arvore);
+    busca_arvore_rec(RRN_raiz);
+    */
+}
+
+void busca_seq_dados(ArqDados_t *arq_dados, InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
     
     int achei_reg_val = 0;
     //Flag que indica se algum registro satisafaz todos os critérios de busca.
@@ -271,7 +308,7 @@ void busca_seq_dados(ArqDados_t *arq_dados, ArqIndex_t *arq_index,InfoDados_t *c
             //se o registro satisfaz todos os criterios, realizo a ação 
             achei_reg_val = 1;//achei pelo menos 1 registro que satisfaz os critérios
 
-            acao(arq_dados, arq_index, registro, alteracoes, byteOffSet_atual);
+            acao(arq_dados, registro, alteracoes, byteOffSet_atual);
         }
         byteOffSet_atual += consegui_ler;
         //sempre desaloco o registro, pois preciso desalocar os campos de tamanho variavel do registro
@@ -284,10 +321,7 @@ void busca_seq_dados(ArqDados_t *arq_dados, ArqIndex_t *arq_index,InfoDados_t *c
 
     free(registro);
     
-    if(achei_reg_val != 0){
-        achei_reg_val = arq_index->qtdReg_vetTemp;
-    }
-    final(arq_index, achei_reg_val);
+    final(achei_reg_val);
 }
 
 int inserirRegStdin(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int qtdInserir){

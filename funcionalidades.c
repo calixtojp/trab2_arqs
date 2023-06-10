@@ -123,7 +123,7 @@ void where(void){
         caso nenhum satisfaça os critérios de busca*/
 
         //MUDAR
-        // processaRegistros(arq_dados,arq_index,criterios,alteracoes,printa_busca,achouReg);
+        processaRegistros(arq_dados,arvore,criterios,alteracoes,printa_busca,achouReg);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoBusca(criterios);
