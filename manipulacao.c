@@ -130,6 +130,10 @@ char *getNomeArqDados(ArqDados_t *arq_dados){
     return arq_dados->nomeArqDados;
 }
 
+char *getNomeArvore(Arvore_t *arvore){
+    return arvore->nomeArqArvore;
+}
+
 void levaFinalCursorDados(ArqDados_t *arq_dados){
     fseek(arq_dados->arqDados, 0, SEEK_END);
 }
@@ -218,54 +222,6 @@ int busca_por_indexado(InfoDados_t *criterios){
     return -1;
 }
 
-void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, InfoDados_t *alteracoes, 
-                        FncAcao acao, FncFinaliza final){
-    /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
-    Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
-
-    int posicao_criterio = busca_por_indexado(criterios);
-    
-
-    if(posicao_criterio >= 0 ){
-        /*se a árvore B* indexa algum dos critérios de busca, então faço a busca usando-a.*/
-        busca_arvore(arvore,arq_dados,posicao_criterio,criterios,alteracoes,acao,final);
-    }else{
-        //se não, faz-se busca sequencial no arquivo de dados
-    
-        //Para isso, deve-se reiniciar o ponteiro do arquivo de dados para o primeiro registro de dados (pulando o cabecalho) 
-        //para fazer um novo processamento, pois não há garantia de que o ponteiro esteja corretamente posicionado
-        fseek(arq_dados->arqDados,len_cabecalho_dados(),SEEK_SET);
-        //em seguida, chama-se a função que realiza a busca sequencial
-        busca_seq_dados(arq_dados, arq_index, criterios,alteracoes,acao,final);
-    }
-
-}
-
-void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave, InfoBusca_t *criterios, InfoBusca_t *alteracoes,FncAcao acao, FncFinaliza final){
-
-    //descubro o tipo de dado indexado (0 inteiro, 1 string)
-    int tipoDado = arq_index->tipoDadoInt;
-
-    //crio um vetor de funções que fazem busca binária
-    FncBuscaBin fncsBuscaBin[] = {busca_bin_int, busca_bin_str};
-
-    void *vetorIndex = escolhe_vet_indx(arq_index);//descubro qual é o vetor no qual devo buscar
-    void *chave = escolhe_criterio_vet_vals(criterios, pos_chave, tipoDado);//descubro qual é a chave busca
-
-    int qtd_reg_val=0;//guarda o numero de registros que satisfazem o criterio de busca do arquivo de indice
-    int pos_prim = fncsBuscaBin[tipoDado](vetorIndex, arq_index->cabecalhoIndex, chave, &qtd_reg_val);
-    //fncsBuscaBin retorna o primeiro registro que satisfaz o critério de busca binária no vetorIndex.
-    //Caso nenhum satisfaça, retorna -1. Além disso, motifica a variável "qtd_reg_val", por
-    //referência, para o número de resgistros que satisfazem o critério de busca.
-    //Dessa forma, o intervalo por_prim até [pos_prim+qtd_reg_val-1] é constituído por
-    //todos os registros que satisfazem o critério de busca.
-
-    //Com as informações sobre o intervalo (no vetIndex) que satisfaz os critérios de busca, percorro o vetIndex.
-    //crio um vetor de funções que pegam o byteOffset, para usar no 'percorrer_index()'
-    FncGetByteOffSet fncsGetByteOffSet[] = {get_byteOffset_int, get_byteOffset_str};
-    percorrer_index(fncsGetByteOffSet[tipoDado], pos_prim, qtd_reg_val, arq_dados, arq_index, criterios, alteracoes,acao, final);
-}
-
 long long int busca_arvore_rec(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDados_t *criterios, InfoDados_t *alteracoes, FncAcao acao, FncFinaliza final){
     /*
     if(RRN_atual == -1){//critério de parada
@@ -287,7 +243,7 @@ void busca_arvore(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDad
     */
 }
 
-void busca_seq_dados(ArqDados_t *arq_dados, InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
+void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
     
     int achei_reg_val = 0;
     //Flag que indica se algum registro satisafaz todos os critérios de busca.
@@ -308,7 +264,7 @@ void busca_seq_dados(ArqDados_t *arq_dados, InfoDados_t *criterios, InfoDados_t 
             //se o registro satisfaz todos os criterios, realizo a ação 
             achei_reg_val = 1;//achei pelo menos 1 registro que satisfaz os critérios
 
-            acao(arq_dados, registro, alteracoes, byteOffSet_atual);
+            acao(arq_dados, arvore, registro, alteracoes, byteOffSet_atual);
         }
         byteOffSet_atual += consegui_ler;
         //sempre desaloco o registro, pois preciso desalocar os campos de tamanho variavel do registro
@@ -321,129 +277,179 @@ void busca_seq_dados(ArqDados_t *arq_dados, InfoDados_t *criterios, InfoDados_t 
 
     free(registro);
     
-    final(achei_reg_val);
+    final(arvore, achei_reg_val);
 }
 
-int inserirRegStdin(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int qtdInserir){
-    /*
-        Função que lê um registro da entrada padrão (por meio do scanf) e adiciona-o
-    no arquivo de dados e de index.
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, InfoDados_t *alteracoes, 
+                        FncAcao acao, FncFinaliza final){
+    /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
+    Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
 
-        Entradas: 
-        -ArqDados_t na qual será inserido o registro no final
-    do arquivo de dados.
-        -ArqIndex_t no qual será inserido o registro lido (no vetor temporário carregado dentro da própria struct)
-        -int qtdInserir é a quantidade de registros que serão inseridos
-
-        Comportamento:
-        -A função altera o vetor temporário armazenado na struct ArqIndex_t, bem como a quantidade
-        de registros armazenados no vetor temporário (arq_index->qtdReg_vetTemp). Após utilizado o vetor temporário,
-        altera a quantidade de registros no cabeçalho do arquivo de index (carregado em RAM) e adiciona o vetor 
-        temporário ao vetor Original de registros. 
-    */
-
-    //1-escolher o tipo que será usado
-    int tipo = arq_index->tipoDadoInt;
-    //2-mover o cursor do arquivo de dados para o fim (onde será feita a escrita)
-    fseek(arq_dados->arqDados, 0, SEEK_END);
-
-    //3-alocar o vetor temporário para alocar os registros nele
-    criarVetTemp(arq_index, qtdInserir);
+    int posicao_criterio = busca_por_indexado(criterios);
     
-    //4-selecionar os dados usados, bem como as funções
-    dados_t *reg = alocar_dados();
-    FncGetCampoIndexIndexado fncsGetCampoIndexado[] = {getCampoInt, getCampoStr};
-    FncCampoNulo fncsCampoNulo[] = {campoNulo_int, campoNulo_str};
 
-    //5-inserir os registros válidos no vetor temporário e no arquivo de dados
-    int pos_inserir = 0;
-    int contador = qtdInserir;
-    while(contador>0){
-
-        //5.1-ler o registro e ver se o campo indexado é nulo
-        leRegStdin(reg);
-        void *campoIndexado = fncsGetCampoIndexado[tipo](reg, arq_index->campoIndexado);
-        int eh_campo_nulo = fncsCampoNulo[tipo](campoIndexado);
-
-        if(eh_campo_nulo==0){
-            //5.2-Se não é campo nulo, insiro completamente (no arquivo de dados e no vetor armazenado em arq_index)
-            inserirReg(arq_dados, arq_index, reg, pos_inserir);
-            pos_inserir++;
-        }else{
-            //5.3-Se o campo é nulo, insiro somente no arquivo de dados
-            prepara_para_escrita(reg);
-            escrever_bin_registro_dados(reg, arq_dados->arqDados, arq_dados->cabecalhoDados);
-            cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
-        }
-        contador--;
+    if(posicao_criterio >= 0 ){
+        /*se a árvore B* indexa algum dos critérios de busca, então faço a busca usando-a.*/
+        busca_arvore(arvore,arq_dados,posicao_criterio,criterios,alteracoes,acao,final);
+    }else{
+        //se não, faz-se busca sequencial no arquivo de dados
+    
+        //Para isso, deve-se reiniciar o ponteiro do arquivo de dados para o primeiro registro de dados (pulando o cabecalho) 
+        //para fazer um novo processamento, pois não há garantia de que o ponteiro esteja corretamente posicionado
+        fseek(arq_dados->arqDados,len_cabecalho_dados(),SEEK_SET);
+        //em seguida, chama-se a função que realiza a busca sequencial
+        busca_seq_dados(arq_dados, arvore, criterios,alteracoes,acao,final);
     }
 
-    //6-Inserir os registros, que foram adicionados, no vetor original. Para isso:
-    //6.0-devo selecionar a função de cópia, a quantidade anterior e o vetorOriginal que será usado
-    FncCopiaVet fncsCopiaVet[] = {copiaVetInt, copiaVetStr};
-    int qtdRegOriginal = get_qtdReg(arq_index->cabecalhoIndex);
-    //6.1-devo realocar o vetor original
-    realocar_vet_index(arq_index, qtdRegOriginal, pos_inserir);
-    //6.2-copiar os dados que foram inseridos no temporário para o original
-    void *vetOriginal = escolhe_vet_indx(arq_index);
-    fncsCopiaVet[tipo](vetOriginal,arq_index->vetTemp,qtdRegOriginal,qtdRegOriginal+pos_inserir-1,0,pos_inserir-1);
-    set_qtdReg(arq_index->cabecalhoIndex, qtdRegOriginal+pos_inserir);
 }
 
-void inserirReg(ArqDados_t *arq_dados, ArqIndex_t *arq_index, dados_t *reg, int pos){
-    /*
-        Função que insere um registro no final do arquivo de dados e tenta inserir o campo indexado e byteOffSet 
-    no vetor temporário armazenado em arq_index->vetTemp.
-        Entradas:
-            -reg: registro que será inserido.
-            -arq_index: possui o vetTemp o qual será possivelmente inserido o indexamento do registro
-            -arq_dadso: possui o arquivo de dados no qual será inserido o registro recebido
-        Comportamento:
-            Ao longo da função, a quantidade de registros armazenados no vetor temporário (em arq_index->qtdReg_vetTemp)
-            pode ser incrementada o cursor do arquivo de dados começa no final do arquivo e também termina no final do
-            arquivo (pois o registro foi escrito). A variável proxByteOffset armazenada no cabeçalho do arquivo de dados
-            será alterada, bem como a variável nroRegArq será incrementada.
-    */
-    int tipDado = arq_index->tipoDadoInt;
+//MUDAR: antiga busca utilizando o index
+// void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave, InfoBusca_t *criterios, InfoBusca_t *alteracoes,FncAcao acao, FncFinaliza final){
 
-    FncCampoNulo fncsCampoNulo[] = {campoNulo_int,campoNulo_str};
-    FncGetCampoIndexIndexado fncsGetCampo[] = {getCampoInt,getCampoStr};
+//     //descubro o tipo de dado indexado (0 inteiro, 1 string)
+//     int tipoDado = arq_index->tipoDadoInt;
 
-    void *campoIndexado = malloc(sizeof(void));
-    int eh_campo_nulo;
+//     //crio um vetor de funções que fazem busca binária
+//     FncBuscaBin fncsBuscaBin[] = {busca_bin_int, busca_bin_str};
+
+//     void *vetorIndex = escolhe_vet_indx(arq_index);//descubro qual é o vetor no qual devo buscar
+//     void *chave = escolhe_criterio_vet_vals(criterios, pos_chave, tipoDado);//descubro qual é a chave busca
+
+//     int qtd_reg_val=0;//guarda o numero de registros que satisfazem o criterio de busca do arquivo de indice
+//     int pos_prim = fncsBuscaBin[tipoDado](vetorIndex, arq_index->cabecalhoIndex, chave, &qtd_reg_val);
+//     //fncsBuscaBin retorna o primeiro registro que satisfaz o critério de busca binária no vetorIndex.
+//     //Caso nenhum satisfaça, retorna -1. Além disso, motifica a variável "qtd_reg_val", por
+//     //referência, para o número de resgistros que satisfazem o critério de busca.
+//     //Dessa forma, o intervalo por_prim até [pos_prim+qtd_reg_val-1] é constituído por
+//     //todos os registros que satisfazem o critério de busca.
+
+//     //Com as informações sobre o intervalo (no vetIndex) que satisfaz os critérios de busca, percorro o vetIndex.
+//     //crio um vetor de funções que pegam o byteOffset, para usar no 'percorrer_index()'
+//     FncGetByteOffSet fncsGetByteOffSet[] = {get_byteOffset_int, get_byteOffset_str};
+//     percorrer_index(fncsGetByteOffSet[tipoDado], pos_prim, qtd_reg_val, arq_dados, arq_index, criterios, alteracoes,acao, final);
+// }
+
+
+// int inserirRegStdin(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int qtdInserir){
+//     /*
+//         Função que lê um registro da entrada padrão (por meio do scanf) e adiciona-o
+//     no arquivo de dados e de index.
+
+//         Entradas: 
+//         -ArqDados_t na qual será inserido o registro no final
+//     do arquivo de dados.
+//         -ArqIndex_t no qual será inserido o registro lido (no vetor temporário carregado dentro da própria struct)
+//         -int qtdInserir é a quantidade de registros que serão inseridos
+
+//         Comportamento:
+//         -A função altera o vetor temporário armazenado na struct ArqIndex_t, bem como a quantidade
+//         de registros armazenados no vetor temporário (arq_index->qtdReg_vetTemp). Após utilizado o vetor temporário,
+//         altera a quantidade de registros no cabeçalho do arquivo de index (carregado em RAM) e adiciona o vetor 
+//         temporário ao vetor Original de registros. 
+//     */
+
+//     //1-escolher o tipo que será usado
+//     int tipo = arq_index->tipoDadoInt;
+//     //2-mover o cursor do arquivo de dados para o fim (onde será feita a escrita)
+//     fseek(arq_dados->arqDados, 0, SEEK_END);
+
+//     //3-alocar o vetor temporário para alocar os registros nele
+//     criarVetTemp(arq_index, qtdInserir);
     
-    //obtenho o campo indexado (int ou str)
-    campoIndexado = fncsGetCampo[tipDado](reg, arq_index->campoIndexado);
+//     //4-selecionar os dados usados, bem como as funções
+//     dados_t *reg = alocar_dados();
+//     FncGetCampoIndexIndexado fncsGetCampoIndexado[] = {getCampoInt, getCampoStr};
+//     FncCampoNulo fncsCampoNulo[] = {campoNulo_int, campoNulo_str};
 
-    //Vejo se o campo é nulo ou não (para poder indexá-lo)
-    eh_campo_nulo = fncsCampoNulo[tipDado](campoIndexado);
+//     //5-inserir os registros válidos no vetor temporário e no arquivo de dados
+//     int pos_inserir = 0;
+//     int contador = qtdInserir;
+//     while(contador>0){
 
-    if(eh_campo_nulo == 0){//Se não é campo nulo
-        int antigoQtdReg = arq_index->qtdReg_vetTemp;
-        arq_index->qtdReg_vetTemp++;
+//         //5.1-ler o registro e ver se o campo indexado é nulo
+//         leRegStdin(reg);
+//         void *campoIndexado = fncsGetCampoIndexado[tipo](reg, arq_index->campoIndexado);
+//         int eh_campo_nulo = fncsCampoNulo[tipo](campoIndexado);
 
-        long int byte_reg_inserir;
-        byte_reg_inserir = get_proxByteOffset(arq_dados->cabecalhoDados);
+//         if(eh_campo_nulo==0){
+//             //5.2-Se não é campo nulo, insiro completamente (no arquivo de dados e no vetor armazenado em arq_index)
+//             inserirReg(arq_dados, arq_index, reg, pos_inserir);
+//             pos_inserir++;
+//         }else{
+//             //5.3-Se o campo é nulo, insiro somente no arquivo de dados
+//             prepara_para_escrita(reg);
+//             escrever_bin_registro_dados(reg, arq_dados->arqDados, arq_dados->cabecalhoDados);
+//             cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
+//         }
+//         contador--;
+//     }
 
-        //Com o campo indexado e com o byteOffSet, consigo criar o indexamento do registro a ser inserido
+//     //6-Inserir os registros, que foram adicionados, no vetor original. Para isso:
+//     //6.0-devo selecionar a função de cópia, a quantidade anterior e o vetorOriginal que será usado
+//     FncCopiaVet fncsCopiaVet[] = {copiaVetInt, copiaVetStr};
+//     int qtdRegOriginal = get_qtdReg(arq_index->cabecalhoIndex);
+//     //6.1-devo realocar o vetor original
+//     realocar_vet_index(arq_index, qtdRegOriginal, pos_inserir);
+//     //6.2-copiar os dados que foram inseridos no temporário para o original
+//     void *vetOriginal = escolhe_vet_indx(arq_index);
+//     fncsCopiaVet[tipo](vetOriginal,arq_index->vetTemp,qtdRegOriginal,qtdRegOriginal+pos_inserir-1,0,pos_inserir-1);
+//     set_qtdReg(arq_index->cabecalhoIndex, qtdRegOriginal+pos_inserir);
+// }
 
-        void *dadoInserir = malloc(sizeof(void));
+// void inserirReg(ArqDados_t *arq_dados, ArqIndex_t *arq_index, dados_t *reg, int pos){
+//     /*
+//         Função que insere um registro no final do arquivo de dados e tenta inserir o campo indexado e byteOffSet 
+//     no vetor temporário armazenado em arq_index->vetTemp.
+//         Entradas:
+//             -reg: registro que será inserido.
+//             -arq_index: possui o vetTemp o qual será possivelmente inserido o indexamento do registro
+//             -arq_dadso: possui o arquivo de dados no qual será inserido o registro recebido
+//         Comportamento:
+//             Ao longo da função, a quantidade de registros armazenados no vetor temporário (em arq_index->qtdReg_vetTemp)
+//             pode ser incrementada o cursor do arquivo de dados começa no final do arquivo e também termina no final do
+//             arquivo (pois o registro foi escrito). A variável proxByteOffset armazenada no cabeçalho do arquivo de dados
+//             será alterada, bem como a variável nroRegArq será incrementada.
+//     */
+//     int tipDado = arq_index->tipoDadoInt;
 
-        FncSetDadoIndx fncsSetDadoIndx[] = {setDadoIndxInt,setDadoIndxStr};
-        FncSetVetIndx fncsSetVetIndx[] = {setVetIndx_int,setVetIndx_str};
+//     FncCampoNulo fncsCampoNulo[] = {campoNulo_int,campoNulo_str};
+//     FncGetCampoIndexIndexado fncsGetCampo[] = {getCampoInt,getCampoStr};
 
-        dadoInserir = escolhe_indx_dado(arq_index);
+//     void *campoIndexado = malloc(sizeof(void));
+//     int eh_campo_nulo;
+    
+//     //obtenho o campo indexado (int ou str)
+//     campoIndexado = fncsGetCampo[tipDado](reg, arq_index->campoIndexado);
 
-        fncsSetDadoIndx[tipDado](dadoInserir, byte_reg_inserir, campoIndexado);
-        fncsSetVetIndx[tipDado](arq_index->vetTemp, pos, dadoInserir);
-    }
+//     //Vejo se o campo é nulo ou não (para poder indexá-lo)
+//     eh_campo_nulo = fncsCampoNulo[tipDado](campoIndexado);
 
-    //Escrevo no registro de dados
-    prepara_para_escrita(reg);
-    escrever_bin_registro_dados(reg,arq_dados->arqDados,arq_dados->cabecalhoDados); 
-    //incremento o nroRegArq
-    cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
-}
+//     if(eh_campo_nulo == 0){//Se não é campo nulo
+//         int antigoQtdReg = arq_index->qtdReg_vetTemp;
+//         arq_index->qtdReg_vetTemp++;
+
+//         long int byte_reg_inserir;
+//         byte_reg_inserir = get_proxByteOffset(arq_dados->cabecalhoDados);
+
+//         //Com o campo indexado e com o byteOffSet, consigo criar o indexamento do registro a ser inserido
+
+//         void *dadoInserir = malloc(sizeof(void));
+
+//         FncSetDadoIndx fncsSetDadoIndx[] = {setDadoIndxInt,setDadoIndxStr};
+//         FncSetVetIndx fncsSetVetIndx[] = {setVetIndx_int,setVetIndx_str};
+
+//         dadoInserir = escolhe_indx_dado(arq_index);
+
+//         fncsSetDadoIndx[tipDado](dadoInserir, byte_reg_inserir, campoIndexado);
+//         fncsSetVetIndx[tipDado](arq_index->vetTemp, pos, dadoInserir);
+//     }
+
+//     //Escrevo no registro de dados
+//     prepara_para_escrita(reg);
+//     escrever_bin_registro_dados(reg,arq_dados->arqDados,arq_dados->cabecalhoDados); 
+//     //incremento o nroRegArq
+//     cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
+// }
 
 void reiniciarCursorDados(ArqDados_t *arq_dados){
     fseek(arq_dados->arqDados,0,SEEK_SET);

@@ -31,13 +31,28 @@ cabecalho_arvore_t *alocar_cabecalho_arvore(void){
     return cabecalho_retorno;
 }
 
+void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho){
+    printf("Cabeçalho da arvore: \n");
+    printf("status=%c|noRaiz=%d|RRNproxNo=%d|nroNiveis=%d|nroChaves=%d\n"
+        , cabecalho->status
+        , cabecalho->noRaiz
+        , cabecalho->RRNproxNo
+        , cabecalho->nroNiveis
+        , cabecalho->nroChaves
+    );
+}
+
 void ler_cabecalho_arq_arvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
     fread(&(cabecalho->status), sizeof(char), 1, arqArvore);
     fread(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
     fread(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);
     fread(&(cabecalho->nroNiveis), sizeof(int), 1, arqArvore);
     fread(&(cabecalho->nroChaves), sizeof(int), 1, arqArvore);
-    fread(cabecalho->lixo, (59)*(sizeof(char)), 59, arqArvore);
+    for(int i = 0; i < 59; ++i){
+        fread(&(cabecalho->lixo[i]), sizeof(char), 1, arqArvore);
+    }
+
+    mostra_cabecalho_arvore(cabecalho);
 }
 
 char getStatusArvore(cabecalho_arvore_t *cabecalho){

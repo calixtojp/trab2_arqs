@@ -10,20 +10,14 @@ int main(){
     scanf("%d", &funcionalidade);
 
     switch(funcionalidade){
-        case 3:
+        case 8:
             create_index();
             break;
-        case 4:
+        case 9:
             where();
             break;
-        case 5:
-            delete_from();
-            break;
-        case 6:
+        case 10:
             insert_into();
-            break;
-        case 7:
-            update();
             break;
     }
 

@@ -5,7 +5,7 @@
 #include "manipulacao.h"
 
 //Funcionalidade [8]
-// void create_index(){
+void create_index(){
 
 //     //Aloca os tipos que serão usados
 //     ArqDados_t *arq_dados = alocar_arq_dados();
@@ -75,7 +75,7 @@
 //     //Desalocar tipos utilizados
 //     desalocar_ArqDados(arq_dados);
 //     desalocar_ArqIndex(arq_index);
-// }
+}
 
 //Funcionalidade [9]
 void where(void){
@@ -92,17 +92,19 @@ void where(void){
     ignorar_palavra_stdin();//Ignoro a especificação do 'tipoDado'. Sempre será usado o int.
     ler_nome_arvore(arvore);
     scanf("%d",&n);
+    printf("Leitura dos inputs concluída\n");
 
     //Com os inputs armazenados, faço a abertura dos arquivos.
     abrir_arq_dados(arq_dados, "rb");
     iniciar_arvore(arvore, "rb");
+    printf("arquivos foram abertos\n");
 
     //Ler o cabeçalho dos arquivos
     ler_cabecalho_arvore(arvore);
     ler_cabecalho_dados(arq_dados);
 
     //Testo se os dois arquivos estao consistentes. Se não estão, encerro o programa com uma mensagem de erro.
-    if(testarStatusIndex(arvore)==0){
+    if(testarStatusArvore(arvore)==0){
         mensagem_erro();
     }else if(testarStatusDados(arq_dados)==0){
         mensagem_erro();
@@ -122,11 +124,10 @@ void where(void){
         e o final 'achouReg', que diz se o registro é inexistente, 
         caso nenhum satisfaça os critérios de busca*/
 
-        //MUDAR
         processaRegistros(arq_dados,arvore,criterios,alteracoes,printa_busca,achouReg);
 
         //Desalocar crtérios de busca    	
-        desalocar_InfoBusca(criterios);
+        desalocar_InfoDados(criterios);
     }
 
     //Fechar arquivos
@@ -139,7 +140,7 @@ void where(void){
 }
 
 //Funcionalidade [10]
-// void insert_into(){
+void insert_into(){
 //     //Alocar tipos utilizados
 //     ArqDados_t *arq_dados = alocar_arq_dados();
 //     erro(arq_dados);
@@ -215,4 +216,4 @@ void where(void){
 //     //Desalocar os tipos utilizados
 //     desalocar_ArqDados(arq_dados);
 //     desalocar_ArqIndex(arq_index);
-// }
+}
