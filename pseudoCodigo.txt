@@ -8,6 +8,3 @@
     função 9 usa o processaRegistro()
 */
 
-inserir_reg(arq_dados, arvore, reg){
-
-}

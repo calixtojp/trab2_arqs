@@ -6,6 +6,7 @@
 #include "auxiliares.h"
 
 #define TAM_MAX_CABECALHO_CSV 100
+#define TAM_MAX_PALAVRA 50
 
 void binarioNaTela(char *nomeArquivoBinario){
     /*
@@ -315,4 +316,9 @@ int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comp
 
         return busca_bin_rec(vetor, ini, fim, chave, comparacao);
     }
+}
+
+void ignorar_palavra_stdin(void){
+    char lixo[TAM_MAX_PALAVRA];
+    scanf(" %s", lixo);
 }

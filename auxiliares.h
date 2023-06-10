@@ -26,5 +26,6 @@
 	void pular_cabecalho_csv(FILE *arq);
 	void mensagem_NULO(void);
 	int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comparacao);
+	void ignorar_palavra_stdin(void);
 
 #endif

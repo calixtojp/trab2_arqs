@@ -20,6 +20,7 @@ struct Arvore{
     char nomeArqArvore[MAX_NOME_ARQ];
     FILE *arqArvore;
     cabecalho_arvore_t *cabecalhoArvore;
+    
 };
 
 struct InfoDados{
@@ -35,9 +36,15 @@ ArqDados_t *alocar_arq_dados(void){
     ArqDados_t *arq_dados_main;
     arq_dados_main = malloc(sizeof(ArqDados_t));
 
-    arq_dados_main->cabecalhoDados = alocar_cabecalho_dados();
+    arq_dados_main->cabecalhoDados = alocar_cabecalho_dados(); //MUDAR estou alocando o cabeçalho aqui, mas na função de leitura aloco novamente
 
     return arq_dados_main;
+}
+
+Arvore_t *alocar_arvore(void){
+    Arvore_t *arvore_retorno = malloc(sizeof(Arvore_t));
+    arvore_retorno->cabecalhoArvore = alocar_cabecalho_arvore();
+    return arvore_retorno;
 }
 
 void ler_nome_arq_dados(ArqDados_t *arq_dados){
@@ -47,10 +54,23 @@ void ler_nome_arq_dados(ArqDados_t *arq_dados){
     }
 }
 
+void ler_nome_arvore(Arvore_t *arvore){
+    int retorno_scanf = scanf(" %s", arvore->nomeArqArvore); 
+    if(retorno_scanf != 1){
+        mensagem_erro();
+    }
+}
 
 void abrir_arq_dados(ArqDados_t *arq_dados, const char *tipo_leitura){
     arq_dados->arqDados = fopen(arq_dados->nomeArqDados, tipo_leitura);
     if(arq_dados->arqDados == NULL){
+        mensagem_erro();
+    }
+}
+
+void iniciar_arvore(Arvore_t *arvore, const char *tipo_leitura){
+    arvore->arqArvore = fopen(arvore->nomeArqArvore, tipo_leitura);
+    if(arvore->arqArvore == NULL){
         mensagem_erro();
     }
 }
@@ -60,12 +80,25 @@ void desalocar_ArqDados(ArqDados_t *arq_dados){
     free(arq_dados);
 }
 
+void desalocar_Arvore(Arvore_t *arvore){
+    free(arvore->cabecalhoArvore);
+    free(arvore);
+}
+
 void fechar_arq_dados(ArqDados_t *arq_dados){
     fclose(arq_dados->arqDados);
 }
 
+void fechar_arvore(Arvore_t *arvore){
+    fclose(arvore->arqArvore);
+}
+
 void ler_cabecalho_dados(ArqDados_t *arq_dados){
     arq_dados->cabecalhoDados = ler_dados_cabecalho(arq_dados->arqDados);
+}
+
+void ler_cabecalho_arvore(Arvore_t *arvore){
+    ler_cabecalho_arq_arvore(arvore->arqArvore, arvore->cabecalhoArvore);
 }
 
 int getTamCabecalhoDados(ArqDados_t *arq_dados){
@@ -143,6 +176,14 @@ void achouReg(void *arq_index, int flag){
     if(flag == 0){
         printf("Registro inexistente.\n");
     }
+}
+
+int testarStatusArvore(Arvore_t *arvore){
+	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
+    if(getStatusArvore(arvore->cabecalhoArvore) == '1'){
+        return 1;
+    }
+    return 0;
 }
 
 int testarStatusDados(ArqDados_t *arq_dados){
