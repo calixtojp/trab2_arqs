@@ -11,10 +11,9 @@
 #define _MANIPULACAO
 
 #include "arq_dados.h"
-#include "arq_indice.h"
 
 typedef struct ArqDados ArqDados_t;
-typedef struct ArqIndex ArqIndex_t;
+typedef struct Arvore Arvore_t;
 typedef struct InfoBusca InfoBusca_t;
 
 typedef void (*FncAcao) (ArqDados_t*, ArqIndex_t*, dados_t*, InfoBusca_t*, long int);

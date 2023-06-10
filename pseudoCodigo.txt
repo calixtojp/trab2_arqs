@@ -1,0 +1,13 @@
+/*
+    Duas formas de split: spli_1_para_2 e spli_2_para_3.
+    A inserção é recursiva, de modo que se não consigo inserir no nó filho, devo fazer split.
+
+    8 e 10 usam a mesma função de "insere_arvore"
+    essa função de insere_arvore deve inserir um registro na arvore
+
+    função 9 usa o processaRegistro()
+*/
+
+inserir_reg(arq_dados, arvore, reg){
+
+}

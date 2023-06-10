@@ -1,0 +1,14 @@
+*.o
+*.bin
+*.in
+*.out
+*.zip
+/.vscode
+/casos_de_teste
+/arquivos
+/pijas
+/casos_de_teste_oculto
+arq
+funcoesFornecidas.c
+testes
+testes2.c
