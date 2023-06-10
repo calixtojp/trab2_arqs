@@ -294,32 +294,7 @@ void mensagem_NULO(void){
     printf("NULO");
 }
 
-long long int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comparacao, int *P){
-    //busca binaria recursiva
-    if(ini > fim){//criterio de parada
-        return -1;
-    }
 
-    int meio = (ini+fim)/2;
-
-    if(comparacao(vetor,meio,chave)==0){
-        //se o vetor[meio] == chave, retorno o meio
-        return meio;
-        *P = -1;
-    }else if(comparacao(vetor,meio,chave)>0){
-        //se o vetor[meio] > chave, busco de novo até o meio-1
-        fim = meio-1;
-        *P = anterior
-
-        return busca_bin_rec(vetor, ini, fim, chave, comparacao);
-    }else{
-        //se o vetor[meio] < chave, busco de novo a partir do meio+1
-        ini = meio+1;
-        *P = proximo
-
-        return busca_bin_rec(vetor, ini, fim, chave, comparacao);
-    }
-}
 
 void ignorar_palavra_stdin(void){
     char lixo[TAM_MAX_PALAVRA];

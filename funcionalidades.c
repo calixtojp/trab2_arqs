@@ -115,15 +115,12 @@ void where(void){
         //Ler os critérios de busca
         InfoDados_t *criterios = ler_criterios_busca();
 
-        //Não carrego nenhuma alteração, pois não irei alterar o registro buscado.
-        InfoDados_t *alteracoes;
-
         /*Processar o registro usando a ação 'printa_busca'
         e o final 'achouReg', que diz se o registro é inexistente, 
         caso nenhum satisfaça os critérios de busca*/
 
         //MUDAR
-        processaRegistros(arq_dados,arvore,criterios,alteracoes,printa_busca,achouReg);
+        processaRegistros(arq_dados,arvore,criterios,printa_busca,achouReg);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoBusca(criterios);
