@@ -51,10 +51,66 @@ void ler_cabecalho_arq_arvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
     for(int i = 0; i < 59; ++i){
         fread(&(cabecalho->lixo[i]), sizeof(char), 1, arqArvore);
     }
-
-    mostra_cabecalho_arvore(cabecalho);
 }
 
 char getStatusArvore(cabecalho_arvore_t *cabecalho){
     return cabecalho->status;
 }
+
+int get_ordem_arvore(){
+    return M;
+}
+
+int get_tam_pagina(){
+    return TAM_PAGINA;
+}
+
+int get_noRaiz(cabecalho_arvore_t *cabecalho){
+    return cabecalho->noRaiz;
+}
+
+no_arvore_t *ler_pagina_disco(FILE *arqArvore){
+    //MUDAR
+}
+
+// long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, int *P){
+//     //busca binária recursiva para nós da árvore B*
+
+//     /*O ponteiro P (int *P) é o valor do RRN do próximo nó para o qual a função de busca
+//     deve ir, caso a chave buscada não seja encontrada no nó atual (no_arvore_t *no_atual). 
+//     Como não é possível retornar dois valores em C, esse valor é passado por referência.*/
+
+//     /*O retorno da função é o byteOffset, no arquivo de dados, do registro que satisfaz 
+//     o critério de busca.*/
+
+//     if(ini > fim){//critério de parada
+//         //Se o valor não existe, retorno um byteOffset inválido.
+//         return -1;
+//     }
+
+//     int meio = (ini+fim)/2;
+
+//     if((no_atual->chaves[meio]).C == chave){
+//         //Se achei:
+//         //-Coloco um valor nulo no ponteiro para outro nó da árvore, pois não é necessário usá-lo
+//         *P = -1;
+//         //-Retorno o byteOffset do registro no arquivo de dados
+//         return (no_atual->chaves[meio]).Pr;
+//     }else if(chave < (no_atual->chaves[meio]).C){
+//         //Se o valor que estou buscando é menor que o atual:
+//         //-Preparo a busca recursiva até o atual-1
+//         fim = meio-1;
+//         //-Atribuo, ao ponteiro P, o ponteiro à esquerda do valor atual 
+//         *P = no_atual->P[meio];
+//         //-Chamo a função recursivamente com os valores atualizados
+//         return busca_bin_arvore(no_atual, ini, fim, chave, P);
+//     }else{
+//         //Se o valor que estou buscando é maior que o atual:
+//         //-Preparo a busca recursiva a partir do atual+1
+//         ini = meio+1;
+//         //-Atribuo, ao ponteiro P, o ponteiro à direita do valor atual 
+//         *P = no_atual->P[meio+1];
+//         //-Chamo a função recursivamente com os valores atualizados
+//         return busca_bin_arvore(no_atual, ini, fim, chave, P);
+//     }
+// }

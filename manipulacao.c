@@ -20,7 +20,8 @@ struct Arvore{
     char nomeArqArvore[MAX_NOME_ARQ];
     FILE *arqArvore;
     cabecalho_arvore_t *cabecalhoArvore;
-    
+    int M;
+    int tam_pagina;    
 };
 
 struct InfoDados{
@@ -44,6 +45,8 @@ ArqDados_t *alocar_arq_dados(void){
 Arvore_t *alocar_arvore(void){
     Arvore_t *arvore_retorno = malloc(sizeof(Arvore_t));
     arvore_retorno->cabecalhoArvore = alocar_cabecalho_arvore();
+    arvore_retorno->M = get_ordem_arvore();
+    arvore_retorno->tam_pagina = get_tam_pagina();
     return arvore_retorno;
 }
 
@@ -105,11 +108,13 @@ int getTamCabecalhoDados(ArqDados_t *arq_dados){
     return len_cabecalho_dados();
 }
 
-void printa_busca(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro, InfoDados_t *alteracoes,long int byteOffSet){
-    //funcao que ignora os campos do tipo void para que toda as funções de 
-    //'acao' em 'processaRegistros()' sejam do mesmo tipo, no caso o 'FncAcao'
+void printa_busca(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
+    //Função que ignora os campos desnecessários e, em seguida, printa os campos de um registro.
+    
+    /*Para que toda as funções de 'acao' em 'processaRegistros()' sejam do mesmo tipo (FncAcao),
+    é preciso sempre receber os mesmos parâmetros, mesmo que não sejam usados. Assim é necessário
+    ignorar alguns desses parâmetros.*/
 
-    //Em seguida, printa os campos de um registro
     mostrar_campos(registro);
 }
 
@@ -184,8 +189,8 @@ void desalocar_InfoDados(InfoDados_t *informacao){
     free(informacao);
 }
 
-void achouReg(void *arvore, int flag){
-    if(flag == 0){
+void achouReg(int flag){
+    if(flag <= 0){
         printf("Registro inexistente.\n");
     }
 }
@@ -222,28 +227,61 @@ int busca_por_indexado(InfoDados_t *criterios){
     return -1;
 }
 
-long long int busca_arvore_rec(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDados_t *criterios, InfoDados_t *alteracoes, FncAcao acao, FncFinaliza final){
-    /*
-    if(RRN_atual == -1){//critério de parada
-        return -1;
-    }
+long long int busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int chave){
+    /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado é idCrime.
+    Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN do nó que está sendo verificado.
+    O retorno da função é o byteOffset do registro que tem o idCrime buscado. Caso esse registro não exista, o retorno é -1.*/
 
-    fseek(arvore, RRN_atual * getTamPagina());
-    no_arvore_t no_aux = ler_pagina_disco();
+    // if(RRN_atual == -1){//critério de parada
+    //     //Não há registro com o idCrime buscado
+    //     return -1;
+    // }
 
-    busca_bin(no_aux);
+    // //Leio o nó que quero verificar
+    // fseek(arvore->arqArvore, RRN_atual * get_tam_pagina(),SEEK_SET);
+    // no_arvore_t *no_aux = ler_pagina_disco(arvore->arqArvore);
 
-    */
+    // /*Defino P como sendo o ponteiro para o próximo nó (na próxima chamada recursiva dessa função, ele será o 'RRN_atual').
+    // Atribuo um valor nulo de início.*/
+    // int P = -1;
+    
+    // /*Defino Pr como sendo o byteOffset do registro encontrado.*/
+    // long long int Pr = busca_bin_no(no_aux, 0, arvore->M -2, chave, &P);
+
+    // if(Pr == -1){
+    //     //se não encontrou o valor buscado no nó lido, 
+    //     //chamo a função recursivamente para o próximo nó (valor armazenado em P)
+    //     busca_arvore_rec(arvore, P, chave);
+    // }else{
+    //     //Se encontrou, retorno o byteOffset 
+    //     return Pr;
+    // }
 }
 
-void busca_arvore(Arvore_t *arvore, ArqDados_t *arq_dados, int pos_crit, InfoDados_t *criterios, InfoDados_t *alteracoes, FncAcao acao, FncFinaliza final){
-    /*
-    RRN_raiz = get_noRaiz(arvore);
-    busca_arvore_rec(RRN_raiz);
-    */
+void busca_arvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
+    // int RRN_raiz = get_noRaiz(arvore->cabecalhoArvore);
+
+    // //chamo a função recursiva de busca na árvore B*, a partir do nó raiz
+    // long int byteOffset = busca_arvore_rec(arvore, RRN_raiz, criterios->vals_int[pos_crit]);
+
+    // /*a função busca_arvore_rec() retorna o byteOffset do registro encontrado ou retorna -1, caso não encontre*/
+    
+    // if(byteOffset != -1){
+    //     //Se algum registro foi encontrado, testo os outros critérios de busca
+    //     fseek(arq_dados->arqDados, byteOffset, SEEK_SET);
+    //     dados_t *registro = alocar_dados();
+    //     ler_bin_registro(registro, arq_dados->arqDados);
+
+    //     if(testar_criterios(registro, criterios->nomes, criterios->vals_str, criterios->vals_int, criterios->qtd_crit)){
+    //         //se o registro satisfaz os critérios de busca, realizo a ação.
+    //         acao(arq_dados, arvore, registro);
+    //     }
+    // }
+
+    // final(byteOffset);
 }
 
-void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, InfoDados_t *alteracoes,FncAcao acao, FncFinaliza final){
+void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
     
     int achei_reg_val = 0;
     //Flag que indica se algum registro satisafaz todos os critérios de busca.
@@ -264,7 +302,7 @@ void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criter
             //se o registro satisfaz todos os criterios, realizo a ação 
             achei_reg_val = 1;//achei pelo menos 1 registro que satisfaz os critérios
 
-            acao(arq_dados, arvore, registro, alteracoes, byteOffSet_atual);
+            acao(arq_dados, arvore, registro);
         }
         byteOffSet_atual += consegui_ler;
         //sempre desaloco o registro, pois preciso desalocar os campos de tamanho variavel do registro
@@ -277,20 +315,18 @@ void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criter
 
     free(registro);
     
-    final(arvore, achei_reg_val);
+    final(achei_reg_val);
 }
 
-void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, InfoDados_t *alteracoes, 
-                        FncAcao acao, FncFinaliza final){
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
     /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
     Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
 
     int posicao_criterio = busca_por_indexado(criterios);
     
-
     if(posicao_criterio >= 0 ){
         /*se a árvore B* indexa algum dos critérios de busca, então faço a busca usando-a.*/
-        busca_arvore(arvore,arq_dados,posicao_criterio,criterios,alteracoes,acao,final);
+        busca_arvore(arq_dados,arvore,posicao_criterio,criterios,acao,final);
     }else{
         //se não, faz-se busca sequencial no arquivo de dados
     
@@ -298,7 +334,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
         //para fazer um novo processamento, pois não há garantia de que o ponteiro esteja corretamente posicionado
         fseek(arq_dados->arqDados,len_cabecalho_dados(),SEEK_SET);
         //em seguida, chama-se a função que realiza a busca sequencial
-        busca_seq_dados(arq_dados, arvore, criterios,alteracoes,acao,final);
+        busca_seq_dados(arq_dados, arvore, criterios, acao,final);
     }
 
 }

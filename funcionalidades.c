@@ -92,12 +92,10 @@ void where(void){
     ignorar_palavra_stdin();//Ignoro a especificação do 'tipoDado'. Sempre será usado o int.
     ler_nome_arvore(arvore);
     scanf("%d",&n);
-    printf("Leitura dos inputs concluída\n");
 
     //Com os inputs armazenados, faço a abertura dos arquivos.
     abrir_arq_dados(arq_dados, "rb");
     iniciar_arvore(arvore, "rb");
-    printf("arquivos foram abertos\n");
 
     //Ler o cabeçalho dos arquivos
     ler_cabecalho_arvore(arvore);
@@ -117,14 +115,12 @@ void where(void){
         //Ler os critérios de busca
         InfoDados_t *criterios = ler_criterios_busca();
 
-        //Não carrego nenhuma alteração, pois não irei alterar o registro buscado.
-        InfoDados_t *alteracoes;
-
         /*Processar o registro usando a ação 'printa_busca'
         e o final 'achouReg', que diz se o registro é inexistente, 
         caso nenhum satisfaça os critérios de busca*/
 
-        processaRegistros(arq_dados,arvore,criterios,alteracoes,printa_busca,achouReg);
+        //MUDAR
+        processaRegistros(arq_dados,arvore,criterios,printa_busca,achouReg);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
