@@ -63,13 +63,6 @@ void readline(char *string) {
     string[i] = '\0';
 }
 
-void ignorar_resto_linha(void){
-    char c;
-    do{
-        scanf("%c", &c);
-    }while(c != '\n');
-}
-
 void ler_aspas_string(char *str) {
     /*
      * Use essa função para ler um campo string delimitado entre aspas (").
