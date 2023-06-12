@@ -222,8 +222,9 @@ int busca_por_indexado(InfoDados_t *criterios){
     }
     return -1;
 }
+        /*insercao(RRN_atual, RRN_anterior, chave_inserir, chave_promovida, ponteiro_promovido)*/  
 
-long long int busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int chave){
+void busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int *chave, chave_t *chavePromovida){
     /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado é idCrime.
     Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN do nó que está sendo verificado.
     O retorno da função é o byteOffset do registro que tem o idCrime buscado. Caso esse registro não exista, o retorno é -1.*/
@@ -231,7 +232,9 @@ long long int busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int chave){
 
     if(RRN_atual == -1){//critério de parada
         //Não há registro com o idCrime buscado
-        return -1;
+        //Nó vazio
+        /*ACAO PRINTAR*/ 
+        return;
     }
 
     //Leio o nó que quero verificar
@@ -239,6 +242,7 @@ long long int busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int chave){
     no_arvore_t *no_aux = alocar_no();
     ler_pagina_disco(arvore->arqArvore, no_aux);
     // mostrar_no(no_aux);
+    desalocar_no(no_aux);
 
     /*Defino P como sendo o ponteiro para o próximo nó (na próxima chamada recursiva dessa função, ele será o 'RRN_atual').
     Atribuo um valor nulo de início.*/
@@ -253,20 +257,23 @@ long long int busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int chave){
         //se não encontrou o valor buscado no nó lido, 
         //chamo a função recursivamente para o próximo nó (valor armazenado em P)
         busca_arvore_rec(arvore, P, chave);
+        /*insercao(RRN_atual, RRN_anterior, &chave_inserir, &chave_promovida, ponteiro_promovido)*/  
     }else{
         //Se encontrou, retorno o byteOffset
-        desalocar_no(no_aux);
+       /*ACAO PRINTAR*/ 
         return Pr;
     }
-
 }
 
-void busca_arvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
+void processaNo(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
     int RRN_raiz = get_noRaiz(arvore->cabecalhoArvore);
     int achei_reg = -1;
 
+    //chave_promo
+    //ponteiro_promovido
+
     //chamo a função recursiva de busca na árvore B*, a partir do nó raiz
-    long int byteOffset = busca_arvore_rec(arvore, RRN_raiz, criterios->vals_int[pos_crit]);
+    busca_arvore_rec(arvore, RRN_raiz, criterios->vals_int[pos_crit],acao1,acao2);
 
     /*a função busca_arvore_rec() retorna o byteOffset do registro encontrado ou retorna -1, caso não encontre*/
     
@@ -345,33 +352,41 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
 
 }
 
-//MUDAR: antiga busca utilizando o index
-// void busca_bin_index(ArqIndex_t *arq_index, ArqDados_t *arq_dados, int pos_chave, InfoBusca_t *criterios, InfoBusca_t *alteracoes,FncAcao acao, FncFinaliza final){
+void insercao(Arvore_t *arvore, int RRN_atual, int RRN_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
 
-//     //descubro o tipo de dado indexado (0 inteiro, 1 string)
-//     int tipoDado = arq_index->tipoDadoInt;
+    // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
+    // Se é árvore vazia:
+    //     cria raiz
+    //     insere_ordenado(RRN_atual, chave_inserir, -1)
+    // Se não:
+    //     Se cabe no nó:
+    //         insere_ordenado(RRN_atual, chave_inserir, ponteiro_promovido):
+    //     Se não:
+    //         se é raiz:
 
-//     //crio um vetor de funções que fazem busca binária
-//     FncBuscaBin fncsBuscaBin[] = {busca_bin_int, busca_bin_str};
+    //             split_1_pra_2(RRN_atual, chave_inserir, ponteiro_promovido)
+    //         se não:
+    //             redistribuiu = redistribuir()
+    //             se não redistribuiu:
+    //                 split_2_pra_3
 
-//     void *vetorIndex = escolhe_vet_indx(arq_index);//descubro qual é o vetor no qual devo buscar
-//     void *chave = escolhe_criterio_vet_vals(criterios, pos_chave, tipoDado);//descubro qual é a chave busca
+    
+    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a arvore for vazia
+        printf("arvore vazia\n");
+        no_arvore_t *no_raiz = alocar_no();
+        set_no(no_raiz, 0, get_nroNiveis(arvore->cabecalhoArvore));//configuro o no possuindo nenhuma chave e no último nível
+        insere_ordenado(chave_inserir, no_raiz);
+    }
+}
 
-//     int qtd_reg_val=0;//guarda o numero de registros que satisfazem o criterio de busca do arquivo de indice
-//     int pos_prim = fncsBuscaBin[tipoDado](vetorIndex, arq_index->cabecalhoIndex, chave, &qtd_reg_val);
-//     //fncsBuscaBin retorna o primeiro registro que satisfaz o critério de busca binária no vetorIndex.
-//     //Caso nenhum satisfaça, retorna -1. Além disso, motifica a variável "qtd_reg_val", por
-//     //referência, para o número de resgistros que satisfazem o critério de busca.
-//     //Dessa forma, o intervalo por_prim até [pos_prim+qtd_reg_val-1] é constituído por
-//     //todos os registros que satisfazem o critério de busca.
+void noop(void){
 
-//     //Com as informações sobre o intervalo (no vetIndex) que satisfaz os critérios de busca, percorro o vetIndex.
-//     //crio um vetor de funções que pegam o byteOffset, para usar no 'percorrer_index()'
-//     FncGetByteOffSet fncsGetByteOffSet[] = {get_byteOffset_int, get_byteOffset_str};
-//     percorrer_index(fncsGetByteOffSet[tipoDado], pos_prim, qtd_reg_val, arq_dados, arq_index, criterios, alteracoes,acao, final);
-// }
+}
 
-
+void insere_reg(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
+    printf("vou inserir o registro:\n");
+    mostrar_campos(registro);
+}
 // int inserirRegStdin(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int qtdInserir){
 //     /*
 //         Função que lê um registro da entrada padrão (por meio do scanf) e adiciona-o
@@ -497,6 +512,10 @@ void reiniciarCursorDados(ArqDados_t *arq_dados){
     fseek(arq_dados->arqDados,0,SEEK_SET);
 }
 
+void reiniciarCursorArvore(Arvore_t *arvore){
+    fseek(arvore->arqArvore, 0, SEEK_SET);
+}
+
 void alterarStatusDados(ArqDados_t *arq_dados, int status){
     if(status == 1){
         setStatusDados(arq_dados->cabecalhoDados,'1');
@@ -505,10 +524,26 @@ void alterarStatusDados(ArqDados_t *arq_dados, int status){
     }
 }
 
+void alterarStatusArvore(Arvore_t *arvore, int status){
+    if(status == 1){
+        setStatusArvore(arvore->cabecalhoArvore,'1');
+    }else if(status == 0){
+        setStatusArvore(arvore->cabecalhoArvore,'0');
+    }
+}
+
 void escreverStatusDados(ArqDados_t *arq_dados){
     fwriteStatusDados(arq_dados->arqDados, arq_dados->cabecalhoDados);
 }
 
+void escreverStatusArvore(Arvore_t *arvore){
+    fwriteStatusArvore(arvore->arqArvore, arvore->cabecalhoArvore);
+}
+
 void escreverCabecalhoDados(ArqDados_t *arq_dados){
     fwriteCabecalhoDados(arq_dados->arqDados, arq_dados->cabecalhoDados);
+}
+
+void escreverCabecalhoArvore(Arvore_t *arvore){
+    fwriteCabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore);
 }

@@ -41,6 +41,8 @@ int get_nroRegValidos(ArqDados_t *arq_dados);
 char *getNomeArqDados(ArqDados_t *arq_dados);
 char *getNomeArvore(Arvore_t *arvore);
 void levaFinalCursorDados(ArqDados_t *arq_dados);
+void noop(void);
+void insere_reg(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro);
 // int indexaRegistro(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int pos_reg, long int *byteOffSetAnt);
 // void desindexaRegistro(ArqIndex_t *arq_index, int pos);
 // void inserirReg(ArqDados_t *arq_dados, ArqIndex_t *arq_index, dados_t *reg, int pos);
@@ -53,8 +55,10 @@ void achouReg(int flag);
 int testarStatusArvore(Arvore_t *arvore);
 int testarStatusDados(ArqDados_t *arq_dados);
 void reiniciarCursorDados(ArqDados_t *arq_dados);
+void reiniciarCursorArvore(Arvore_t *arvore);
 void alterarStatusDados(ArqDados_t *arq_dados, int status);
+void alterarStatusArvore(Arvore_t *arvore, int status);
 void escreverStatusDados(ArqDados_t *arq_dados);
-// void modificaReg(ArqDados_t *arq_dados, ArqIndex_t *arq_index, dados_t *reg_antigo, InfoDados_t *alteracoes,long int byteOffSet);
+void escreverStatusArvore(Arvore_t *arvore);
 
 #endif

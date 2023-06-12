@@ -137,79 +137,99 @@ void where(void){
 
 //Funcionalidade [10]
 void insert_into(){
-//     //Alocar tipos utilizados
-//     ArqDados_t *arq_dados = alocar_arq_dados();
-//     erro(arq_dados);
-//     ArqIndex_t *arq_index = alocar_arq_index();
-//     erro(arq_index);
+    //Alocar tipos utilizados
+    ArqDados_t *arq_dados = alocar_arq_dados();
+    erro(arq_dados);
+    Arvore_t *arvore = alocar_arvore();
+    erro(arvore);
 
-//     //Ler entrada de dados
-//     ler_nome_arq_dados(arq_dados);
-//     ler_campoIndexado(arq_index);
-//     ler_tipoDado(arq_index);
-//     ler_nome_arq_index(arq_index);
+    //Ler entrada de dados
+    ler_nome_arq_dados(arq_dados);
+    ignorar_palavra_stdin();//Ignoro a especificação do 'campoIndexado'. Sempre será usado o id.
+    ignorar_palavra_stdin();//Ignoro a especificação do 'tipoDado'. Sempre será usado o int.
+    ler_nome_arvore(arvore);
 
-//     //abrir arquivos
-//     abrir_arq_index(arq_index, "rb");
-//     abrir_arq_dados(arq_dados, "r+b");
+    //abrir arquivos
+    iniciar_arvore(arvore, "r+b");
+    abrir_arq_dados(arq_dados, "r+b");
 
-//     //Ler os cabeçalhos
-//     ler_cabecalho_arq_index(arq_index);
-//     ler_dados_arq_index(arq_index);
-//     ler_cabecalho_dados(arq_dados);
+    //Ler os cabeçalhos
+    ler_cabecalho_arvore(arvore);
+    ler_cabecalho_dados(arq_dados);
 
-//     //Testo se os dois arquivos estao consistentes. Se não estão, encerro o programa com uma mensagem de erro.
-//     if(testarStatusIndex(arq_index)==0){
-//         mensagem_erro();
-//     }else if(testarStatusDados(arq_dados)==0){
-//         mensagem_erro();
-//     }
-    
-//     //indico que o arquivo de dados está insconsistente, pois vou escrever apenas nele por enquanto
-//     //como li o cabecalho do arquivo de dados, o cursor está logo após o cabecalho
-//     reiniciarCursorDados(arq_dados);
-//     alterarStatusDados(arq_dados,0);
-//     escreverStatusDados(arq_dados);
+    //Testo se os dois arquivos estao consistentes. Se não estão, encerro o programa com uma mensagem de erro.
+    if(testarStatusArvore(arvore)==0){
+        mensagem_erro();
+    }else if(testarStatusDados(arq_dados)==0){
+        mensagem_erro();
+    }
 
-//     //Como vou escrever os dados no final, devo levar o cursor para o final
-//     levaFinalCursorDados(arq_dados);
+    //Indico que os arquivos estão inconsistentes, pois posso escrever neles.
+    reiniciarCursorDados(arq_dados);
+    alterarStatusDados(arq_dados,0);
+    escreverStatusDados(arq_dados);
 
-//     int qtdInserir;
-//     scanf(" %d", &qtdInserir);
+    reiniciarCursorArvore(arvore);
+    alterarStatusArvore(arvore, 0);
+    escreverStatusArvore(arvore);
 
-//     //Requisito a função que irá ler da entrada padrão e,
-//     //posteriormente, inserir os dados nos arquivos.
-//     inserirRegStdin(arq_dados, arq_index, qtdInserir);
 
-//     //Após inserir os dados, obtenho a quantidade atual de registros
-//     int qtdRegIndex = get_nroRegIndex(arq_index);
-//     ordenaVetIndex(arq_index, qtdRegIndex);
+    //Como vou escrever os dados no final, devo levar o cursor para o final
+    levaFinalCursorDados(arq_dados);
 
-//     //Agora devo reescrever todo o arquivo de índice. Para isso:
-//     //Fecho o arquivo e abro com modo 'wb', para reescrevê-lo por completo
-//     fechar_arq_index(arq_index);
-//     abrir_arq_index(arq_index, "wb");
-//     alterarStatusIndex(arq_index,0);
-//     escreveArqIndex(arq_index);
+    int qtdInserir;
+    scanf(" %d", &qtdInserir);
 
-//     //Agora, indico que os arquivos estão consistentes, pois já usei ambos
-//     reiniciarCursorIndex(arq_index);
-//     alterarStatusIndex(arq_index,1);
-//     escreverStatusIndex(arq_index);
+    // //Requisito a função que irá ler da entrada padrão e,
+    // //posteriormente, inserir os dados nos arquivos.
+    // inserirRegStdin(arq_dados, arq_index, qtdInserir);
 
-//     //Reescrevo o cabeçalho do arquivo de dados, pois, além do status, alterei o campo de registros totais
-//     reiniciarCursorDados(arq_dados);
-//     alterarStatusDados(arq_dados,1);
-//     escreverCabecalhoDados(arq_dados);
+    //Loop que faz as inserções
+    for(int i=1; i<=qtdInserir; i++){
 
-//     //Fechar os arquivos utilizados
-//     fechar_arq_dados(arq_dados);
-//     fechar_arq_index(arq_index);
+        //Ler os dados que serão inseridos
+        InfoDados_t *dados_inserir = ler_criterios_busca();
 
-//     binarioNaTela(getNomeArqDados(arq_dados)); 
-//     binarioNaTela(getNomeArqIndex(arq_index));
+        /*Processar o registro usando a ação 'insere_reg'
+        e como não é necessário uma ação final, a ação final é um 'no operation
+        */
 
-//     //Desalocar os tipos utilizados
-//     desalocar_ArqDados(arq_dados);
-//     desalocar_ArqIndex(arq_index);
+        //MUDAR
+        processaRegistros(arq_dados,arvore,dados_inserir,insere_reg,noop);
+
+        //Desalocar crtérios de busca    	
+        desalocar_InfoDados(dados_inserir);
+    }
+
+    // //Após inserir os dados, obtenho a quantidade atual de registros
+    // int qtdRegIndex = get_nroRegIndex(arq_index);
+    // ordenaVetIndex(arq_index, qtdRegIndex);
+
+    // //Agora devo reescrever todo o arquivo de índice. Para isso:
+    // //Fecho o arquivo e abro com modo 'wb', para reescrevê-lo por completo
+    // fechar_arq_index(arq_index);
+    // abrir_arq_index(arq_index, "wb");
+    // alterarStatusIndex(arq_index,0);
+    // escreveArqIndex(arq_index);
+
+    // //Agora, indico que os arquivos estão consistentes, pois já usei ambos
+    // reiniciarCursorIndex(arq_index);
+    // alterarStatusIndex(arq_index,1);
+    // escreverStatusIndex(arq_index);
+
+    //Reescrevo o cabeçalho do arquivo de dados, pois, além do status, alterei o campo de registros totais
+    reiniciarCursorDados(arq_dados);
+    alterarStatusDados(arq_dados,1);
+    escreverCabecalhoDados(arq_dados);
+
+    //Fechar os arquivos utilizados
+    fechar_arq_dados(arq_dados);
+    // fechar_arq_index(arq_index);
+
+    binarioNaTela(getNomeArqDados(arq_dados)); 
+    // binarioNaTela(getNomeArqIndex(arq_index));
+
+    //Desalocar os tipos utilizados
+    desalocar_ArqDados(arq_dados);
+    // desalocar_ArqIndex(arq_index); 
 }

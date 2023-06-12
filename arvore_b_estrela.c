@@ -83,6 +83,10 @@ char getStatusArvore(cabecalho_arvore_t *cabecalho){
     return cabecalho->status;
 }
 
+void setStatusArvore(cabecalho_arvore_t *cabecalho, char status){
+    cabecalho->status = status;
+}
+
 int get_ordem_arvore(){
     return M;
 }
@@ -95,8 +99,39 @@ int get_noRaiz(cabecalho_arvore_t *cabecalho){
     return cabecalho->noRaiz;
 }
 
+void set_noRaiz(cabecalho_arvore_t *cabecalho, int nova_raiz){
+    cabecalho->noRaiz = nova_raiz;
+}
+
 int get_nChaves(no_arvore_t *no){
     return no->n;
+}
+
+void set_nChaves(no_arvore_t *no, int nova_nChaves){
+    no->n = nova_nChaves;
+}
+
+int get_nroNiveis(cabecalho_arvore_t *cabecalho){
+    return cabecalho->nroNiveis;
+}
+
+void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis){
+    return cabecalho->nroNiveis = nova_nroNiveis;
+}
+void fwriteStatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
+    fwrite(&cabecalho->status,sizeof(char),1,arqArvore);
+}
+
+void fwriteCabecalhoArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
+    fwrite(&(cabecalho->status), sizeof(char), 1, arqArvore);
+    fwrite(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
+    fwrite(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);    
+    fwrite(&(cabecalho->nroNiveis), sizeof(int), 1, arqArvore);    
+    fwrite(&(cabecalho->nroChaves), sizeof(int), 1, arqArvore);    
+    char lixo = '$';
+    for(int i = 0; i < 59; ++i){
+        fwrite(&lixo, sizeof(char), 1, arqArvore);
+    }
 }
 
 void ler_chave(FILE *arqArvore, no_arvore_t *no, int pos_vet_chaves){
@@ -168,3 +203,76 @@ long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, i
         return busca_bin_no(no_atual, ini, fim, chave, P);
     }
 }
+
+void set_no(no_arvore_t *no_configurar, int nChaves, int nivel){
+    no_configurar->n = nChaves;
+    no_configurar->nivel = nivel;
+}
+
+int compara_chaves(chave_t *chave_a, chave_t *chave_b){
+    return chave_a->C - chave_b->C;
+}
+
+void insere_chave_em_no(no_arvore_t *no_inserir, chave_t *chave_inserir, int pos){
+    (no_inserir->chaves[pos]).C = chave_inserir->C;
+    (no_inserir->chaves[pos]).Pr = chave_inserir->Pr;
+}
+
+void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
+    if(no_inserir->n == 0){
+        insere_chave_em_no(no_inserir, chave_inserir, 0);
+    }else{
+        //INSERIR NA ORDEM A SHIFITAR OS DEMAIS
+    }
+}
+
+    /*
+    INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
+    Se é árvore vazia:
+        cria raiz
+        insere_ordenado(RRN_atual, chave_inserir, -1)
+    Se não:
+        Se cabe no nó:
+            insere_ordenado(RRN_atual, chave_inserir, ponteiro_promovido):
+        Se não:
+            se é raiz:
+
+                split_1_pra_2(RRN_atual, chave_inserir, ponteiro_promovido)
+            se não:
+                redistribuiu = redistribuir()
+                se não redistribuiu:
+                    split_2_pra_3
+
+
+
+    SPLIT_1_2(RRN_atual, chave_inserir, ponteiro_promovido): MUDAR: passar a página já lida no lugar do RRN
+        vet_temp = cria_vet_temp_chaves(no_t no_atual, chave);MUDAR: criar um no gigante
+        cria_vet_temp_ponteiros(no_t no_atual, ponteiro_promovido);
+        chave_meio = achar_chave_meio(vet_temp);
+        pagina_dir = cria_pagina_direita();
+        set_pagina(pagina_atual, 0, chave_meio)
+        set_pagina(pagina_dir, chave_meio+1, M)
+        volta_uma_pagina()
+        fwrite_pagina(pagina_atual)
+        vai_pro_fim()
+        fwrite_pagina(pagina_dir)
+        pagina_mae = criar_pagina()
+        pagina_mae.insere(chave_meio)
+        pagina_mae.insere_ponteiro(RRN_atual)
+        pagina_mae.insere_ponteiro(RRN_pagdir)
+        fwrite_pagina(pagina_mae)
+
+        // ...
+        // Pagia Atual
+        // ...
+        // pagina_dir
+        // pagina_mae
+
+        header.noRaiz = RRN_pagina_mae
+
+
+    SPLIT_2_3(no_esq, no_dir, no_mae, chave_inserir, ponterio_promovido):
+        
+        vet_temp = cria_vet_temp_chaves(no_esq, no_dir, chave_inserir)
+        cria_vet_temp_ponteiros(no_esq, no_dir, no_mae, ponteiro_promovido)
+    */
