@@ -205,40 +205,95 @@ int compara_chaves(chave_t *chave_a, chave_t *chave_b){
     return chave_a->C - chave_b->C;
 }
 
-void insere_chave_em_no(no_arvore_t *no_inserir, chave_t *chave_inserir, int pos_inserir){
-    (no_inserir->chaves[pos_inserir]).C = chave_inserir->C;
-    (no_inserir->chaves[pos_inserir]).Pr = chave_inserir->Pr;
+void insere_chave_em_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int pos_inserir){
+    (vet_chaves[pos_inserir]).C = chave_inserir->C;
+    (vet_chaves[pos_inserir]).Pr = chave_inserir->Pr;
 }
 
-void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
-    printf("dentro da inserir ordenado. no antes:\n");
-    mostrar_no(no_inserir);
-    if(no_inserir->n == 0){//Se é um nó vazio, insiro na primeira posição
-        insere_chave_em_no(no_inserir, chave_inserir, 0);
+void insere_ordenado_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int tam_vet_chaves){//[0, 3, 4] <- 2 => [0, 2, 3, 4]
+    //Insere  uma chave (em um vetor de chaves) em sua posição ideal, de modo a manter a ordem.
+    if(tam_vet_chaves == 0){//vetor vazio, insiro na primeira posição
+        insere_chave_em_vet_chaves(vet_chaves, chave_inserir, 0);
     }else{
-        int n = get_nChaves(no_inserir);
-        int ultima_pos_no = n;//não há necessidade prática da variável, é tão somente para facilitar o entendimento
         int fez_shifitada = -1;//flag que indica se houve shifitada
-        for(int i = 0; i < n; ++i){
-            if(compara_chaves(chave_inserir, &(no_inserir->chaves[i])) < 0){
+        for(int i = 0; i < tam_vet_chaves; ++i){
+            if(compara_chaves(chave_inserir, &(vet_chaves[i])) < 0){
                 //Se a chave que vou inserir for menor que a 'i', então vou inseri-la
                 //na posição i e shifitar todas as demais para a posição à direita no nó
                 fez_shifitada = 1; //altero a flag
-                for(int j = ultima_pos_no; j > i; --j){//Começo pela última chave e vou até a chave adjacente à direita de 'i'
+                for(int j = tam_vet_chaves; j > i; --j){//Começo pela última chave e vou até a chave adjacente à direita de 'i'
                     // insiro a chave da posição j-1 na posição j
-                    insere_chave_em_no(no_inserir, &(no_inserir->chaves[j-1]), j);
+                    insere_chave_em_vet_chaves(vet_chaves, &(vet_chaves[j-1]), j);
                 }
-                insere_chave_em_no(no_inserir, chave_inserir, i);
+                //insere chave em sua posição (i)
+                insere_chave_em_vet_chaves(vet_chaves, chave_inserir, i);
                 break;
             }
         }
         if(fez_shifitada == -1){//Se não fez shifitada, então a chave que vou inserir é a maior chave do nó
-            insere_chave_em_no(no_inserir, chave_inserir, ultima_pos_no);//então insiro ela na ultima posição
+            insere_chave_em_vet_chaves(vet_chaves, chave_inserir, tam_vet_chaves);//então insiro ela na ultima posição
         }
     }
-    printf("no depois: ");
-    mostrar_no(no_inserir);
 }
+
+void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir){
+    //Insere uma chave (em um nó) em sua posição ideal, de modo a manter a ordem. 
+    insere_ordenado_vet_chaves(no_inserir->chaves, chave_inserir, no_inserir->n);
+}
+
+int retorna_irma_esq(int pos_vet_P, no_arvore_t *no){
+    if(pos_vet_P == 0){//significa que não há uma irmã à esquerda
+        return -1;
+    }
+
+    return no->P[pos_vet_P-1];
+}
+
+int retorna_irma_dir(int pos_vet_P, no_arvore_t *no){
+    if(pos_vet_P == no->n){//significa que não há uma irmã à direita
+        return -1;
+    }
+
+    return no->P[pos_vet_P+1];
+}
+
+int get_RRN_irma(no_arvore_t *no_mae, int RRN_filho, FncGetRRNirma retorna_irma){
+    for(int pos_vet_P = 0; pos_vet_P < no_mae->n + 1; ++pos_vet_P){//itera o vetor de ponteiros
+        if(no_mae->P[pos_vet_P] == RRN_filho){
+            return retorna_irma(pos_vet_P, no_mae);
+        }
+    }
+}
+
+no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *no_filho, FncGetRRNirma retorna_irma){
+    int menor_C_filho = (no_filho->chaves)[0].C;//menor chave do filho
+
+    //Obter o RRN do filho.
+    int RRN_no_filho;
+    busca_bin_no(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
+
+    //Obter o RRN da página irmã
+    int RRN_irma = get_RRN_irma(no_mae, RRN_no_filho, retorna_irma);
+    if(RRN_irma == -1){//Não tem irmã
+        return NULL;
+    }
+
+    no_arvore_t *no_irma = alocar_no();//aloco o nó
+    fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
+    fluxo_no(arqArvore, no_irma, fread);//leio o nó
+
+    return no_irma;//retorno o nó
+}
+
+int redistribuicao(FILE *arqArvore, no_arvore_t *no_mae, no_arvore_t *no_filho, chave_t *chave_inserir){
+    //Primeiramente, encontrar a página irmã à esquerda
+    no_arvore_t *no_irma = get_pagina_irma(arqArvore,no_mae, no_filho, retorna_irma_esq);
+    if(no_irma = NULL){//Se não conseguiu obter a página irmã à esquerda
+
+    }
+}
+
+
 
     /*
     INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
@@ -256,6 +311,7 @@ void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
                 redistribuiu = redistribuir()
                 se não redistribuiu:
                     split_2_pra_3
+
 
 
 

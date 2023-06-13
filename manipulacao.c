@@ -373,25 +373,39 @@ void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior,
     
     if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
         printf("arvore vazia\n");
-        no_arvore_t *no_raiz = alocar_no();
         set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
-        
-        //configuro o no possuindo nenhuma chave e no último nível (nivel da raiz)
-        set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));
-        set_nChaves(no_raiz, 0);
 
-        insere_ordenado(chave_inserir, no_raiz);//escrevo as informações do nó
+        //configuro o novo nó raiz,
+        no_arvore_t *no_raiz = alocar_no();
+        set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));//o qual possui o nível mais alto
+        set_nChaves(no_raiz, 0);//e inicialmente não possui nenhuma chave.
+
+        insere_ordenado_no(chave_inserir, no_raiz);//escrevo as informações do nó
 
         fluxo_no(arvore->arqArvore, no_raiz, fwrite);//escrevo o nó em memória secundária
     }else{//Se a árvore não é vazia
+        printf("arvore não está vazia\n");
         if(get_nChaves(no_atual) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
-            insere_ordenado(no_atual, chave_inserir);
+            printf("cabe no nó atual\n");
+            insere_ordenado_no(no_atual, chave_inserir);
         }else{//Se a nova chave não cabe no no_atual
-            if(){//Se estou inserindo no nó raiz
+            printf("não cabe no nó atual\n");
+            if(get_nivel_no(no_atual) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
+                //Faço o split_1_para_2
+                split_1_para_2();
+            }else{//Se estou inserindo em qualquer nó que não no raiz
+                //tento a redistribuição
+                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, no_anterior, no_atual, chave_inserir);
+                if(!conseguiu_redistribuir){//Se não conseguiu redistribuir,
+                    //Faço o split_2_para_3
+                    split_2_para_3();
+                }
+
             }
         }
     }
 }
+
 
 void noop(void){
 
