@@ -213,16 +213,34 @@ int compara_chaves(chave_t *chave_a, chave_t *chave_b){
     return chave_a->C - chave_b->C;
 }
 
-void insere_chave_em_no(no_arvore_t *no_inserir, chave_t *chave_inserir, int pos){
-    (no_inserir->chaves[pos]).C = chave_inserir->C;
-    (no_inserir->chaves[pos]).Pr = chave_inserir->Pr;
+void insere_chave_em_no(no_arvore_t *no_inserir, chave_t *chave_inserir, int pos_inserir){
+    (no_inserir->chaves[pos_inserir]).C = chave_inserir->C;
+    (no_inserir->chaves[pos_inserir]).Pr = chave_inserir->Pr;
 }
 
 void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
-    if(no_inserir->n == 0){
+    if(no_inserir->n == 0){//Se é um nó vazio, insiro na primeira posição
         insere_chave_em_no(no_inserir, chave_inserir, 0);
     }else{
-        //INSERIR NA ORDEM A SHIFITAR OS DEMAIS
+        int n = get_nChaves(no_inserir);
+        int ultima_pos_no = n;//não há necessidade prática da variável, é tão somente para facilitar o entendimento
+        int fez_shifitada = -1;//flag que indica se houve shifitada
+        for(int i = 0; i < n; ++i){
+            if(compara_chaves(chave_inserir, &(no_inserir->chaves[i])) < 0){
+                //Se a chave que vou inserir for menor que a 'i', então vou inseri-la
+                //na posição i e shifitar todas as demais para a posição à direita no nó
+                fez_shifitada = 1; //altero a flag
+                for(int j = ultima_pos_no; j > i; --j){//Começo pela última chave e vou até a chave adjacente à direita de 'i'
+                    // insiro a chave da posição j-1 na posição j
+                    insere_chave_em_no(no_inserir, &(no_inserir->chaves[j-1]), j);
+                }
+                insere_chave_em_no(no_inserir, chave_inserir, i);
+                break;
+            }
+        }
+        if(fez_shifitada == -1){//Se não fez shifitada, então a chave que vou inserir é a maior chave do nó
+            insere_chave_em_no(no_inserir, chave_inserir, ultima_pos_no);//então insiro ela na ultima posição
+        }
     }
 }
 
