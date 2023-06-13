@@ -240,7 +240,7 @@ void busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int *chave, chave_t *chav
     //Leio o nó que quero verificar
     fseek(arvore->arqArvore, (RRN_atual+1) * arvore->tam_pagina, SEEK_SET);
     no_arvore_t *no_aux = alocar_no();
-    ler_pagina_disco(arvore->arqArvore, no_aux);
+    fluxo_no(arvore->arqArvore, no_aux, fread);
     // mostrar_no(no_aux);
     desalocar_no(no_aux);
 
@@ -352,7 +352,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
 
 }
 
-void insercao(Arvore_t *arvore, int RRN_atual, int RRN_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
+void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
 
     // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
     // Se é árvore vazia:
@@ -371,11 +371,25 @@ void insercao(Arvore_t *arvore, int RRN_atual, int RRN_anterior, chave_t *chave_
     //                 split_2_pra_3
 
     
-    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a arvore for vazia
+    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
         printf("arvore vazia\n");
         no_arvore_t *no_raiz = alocar_no();
-        set_no(no_raiz, 0, get_nroNiveis(arvore->cabecalhoArvore));//configuro o no possuindo nenhuma chave e no último nível
-        insere_ordenado(chave_inserir, no_raiz);
+        set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
+        
+        //configuro o no possuindo nenhuma chave e no último nível (nivel da raiz)
+        set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));
+        set_nChaves(no_raiz, 0);
+
+        insere_ordenado(chave_inserir, no_raiz);//escrevo as informações do nó
+
+        fluxo_no(arvore->arqArvore, no_raiz, fwrite);//escrevo o nó em memória secundária
+    }else{//Se a árvore não é vazia
+        if(get_nChaves(no_atual) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
+            insere_ordenado(no_atual, chave_inserir);
+        }else{//Se a nova chave não cabe no no_atual
+            if(){//Se estou inserindo no nó raiz
+            }
+        }
     }
 }
 
@@ -537,7 +551,7 @@ void escreverStatusDados(ArqDados_t *arq_dados){
 }
 
 void escreverStatusArvore(Arvore_t *arvore){
-    fwriteStatusArvore(arvore->arqArvore, arvore->cabecalhoArvore);
+    fluxo_StatusArvore(arvore->arqArvore, arvore->cabecalhoArvore, fwrite);
 }
 
 void escreverCabecalhoDados(ArqDados_t *arq_dados){
@@ -545,5 +559,5 @@ void escreverCabecalhoDados(ArqDados_t *arq_dados){
 }
 
 void escreverCabecalhoArvore(Arvore_t *arvore){
-    fwriteCabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore);
+    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, fwrite);
 }

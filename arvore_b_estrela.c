@@ -68,17 +68,6 @@ void mostrar_no(no_arvore_t *no){
     printf("\n");
 }
 
-void ler_cabecalho_arq_arvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
-    fread(&(cabecalho->status), sizeof(char), 1, arqArvore);
-    fread(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
-    fread(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);
-    fread(&(cabecalho->nroNiveis), sizeof(int), 1, arqArvore);
-    fread(&(cabecalho->nroChaves), sizeof(int), 1, arqArvore);
-    for(int i = 0; i < 59; ++i){
-        fread(&(cabecalho->lixo[i]), sizeof(char), 1, arqArvore);
-    }
-}
-
 char getStatusArvore(cabecalho_arvore_t *cabecalho){
     return cabecalho->status;
 }
@@ -118,43 +107,43 @@ int get_nroNiveis(cabecalho_arvore_t *cabecalho){
 void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis){
     return cabecalho->nroNiveis = nova_nroNiveis;
 }
-void fwriteStatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
-    fwrite(&cabecalho->status,sizeof(char),1,arqArvore);
+
+void fluxo_StatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
+    funcFluxo(&cabecalho->status,sizeof(char),1,arqArvore);
 }
 
-void fwriteCabecalhoArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho){
-    fwrite(&(cabecalho->status), sizeof(char), 1, arqArvore);
-    fwrite(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
-    fwrite(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);    
-    fwrite(&(cabecalho->nroNiveis), sizeof(int), 1, arqArvore);    
-    fwrite(&(cabecalho->nroChaves), sizeof(int), 1, arqArvore);    
+void fluxo_CabecalhoArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
+    funcFluxo(&(cabecalho->status), sizeof(char), 1, arqArvore);
+    funcFluxo(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
+    funcFluxo(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);    
+    funcFluxo(&(cabecalho->nroNiveis), sizeof(int), 1, arqArvore);    
+    funcFluxo(&(cabecalho->nroChaves), sizeof(int), 1, arqArvore);    
     char lixo = '$';
     for(int i = 0; i < 59; ++i){
-        fwrite(&lixo, sizeof(char), 1, arqArvore);
+        funcFluxo(&lixo, sizeof(char), 1, arqArvore);
     }
 }
 
-void ler_chave(FILE *arqArvore, no_arvore_t *no, int pos_vet_chaves){
-    fread(&((no->chaves[pos_vet_chaves]).C), sizeof(int), 1, arqArvore);
-    fread(&((no->chaves[pos_vet_chaves]).Pr), sizeof(long long), 1, arqArvore);
+void fluxo_ponteiro_no(FILE *arqArvore, no_arvore_t *no, int pos_vet_ponteiros, FncFluxoMemSec funcFluxo){
+    funcFluxo(&(no->P[pos_vet_ponteiros]), sizeof(int), 1, arqArvore);
 }
 
-void ler_ponteiro(FILE *arqArvore, no_arvore_t *no, int pos_vet_ponteiros){
-    fread(&(no->P[pos_vet_ponteiros]), sizeof(int), 1, arqArvore);
+void fluxo_chave_no(FILE *arqArvore, no_arvore_t *no, int pos_vet_chaves, FncFluxoMemSec funcFluxo){
+    funcFluxo(&((no->chaves[pos_vet_chaves]).C), sizeof(int), 1, arqArvore);
+    funcFluxo(&((no->chaves[pos_vet_chaves]).Pr), sizeof(long long), 1, arqArvore);
 }
 
-void ler_pagina_disco(FILE *arqArvore, no_arvore_t *no){
+void fluxo_no(FILE *arqArvore, no_arvore_t *no_operar, FncFluxoMemSec funcFluxo){
+    //escrever ou ler o nível e o 'n'
+    funcFluxo(&(no_operar->nivel), sizeof(int), 1, arqArvore);
+    funcFluxo(&(no_operar->n), sizeof(int), 1, arqArvore);
 
-    //ler o nível e o 'n'
-    fread(&(no->nivel), sizeof(int), 1, arqArvore);
-    fread(&(no->n), sizeof(int), 1, arqArvore);
-
-    //ler o primeiro ponteiro do no
-    ler_ponteiro(arqArvore, no, 0);      
-    //ler os demais conjuntos de ponteiro e chave
+    //escrever ou ler o primeiro ponteiro do no
+    fluxo_ponteiro_no(arqArvore, no_operar, 0, funcFluxo);      
+    //escrever ou ler os demais conjuntos de ponteiro e chave
     for(int i = 0; i < M - 1; ++i){
-        ler_chave(arqArvore, no, i);
-        ler_ponteiro(arqArvore, no, i+1);
+        fluxo_chave_no(arqArvore, no_operar, i, funcFluxo);
+        fluxo_ponteiro_no(arqArvore, no_operar, i+1, funcFluxo);
     }
 }
 
@@ -204,9 +193,12 @@ long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, i
     }
 }
 
-void set_no(no_arvore_t *no_configurar, int nChaves, int nivel){
-    no_configurar->n = nChaves;
-    no_configurar->nivel = nivel;
+int get_nivel_no(no_arvore_t *no){
+    return no->nivel;
+}
+
+void set_nivel_no(no_arvore_t *no, int nivel){
+    no->nivel = nivel;
 }
 
 int compara_chaves(chave_t *chave_a, chave_t *chave_b){
@@ -219,6 +211,8 @@ void insere_chave_em_no(no_arvore_t *no_inserir, chave_t *chave_inserir, int pos
 }
 
 void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
+    printf("dentro da inserir ordenado. no antes:\n");
+    mostrar_no(no_inserir);
     if(no_inserir->n == 0){//Se é um nó vazio, insiro na primeira posição
         insere_chave_em_no(no_inserir, chave_inserir, 0);
     }else{
@@ -242,6 +236,8 @@ void insere_ordenado(no_arvore_t *no_inserir, chave_t *chave_inserir){
             insere_chave_em_no(no_inserir, chave_inserir, ultima_pos_no);//então insiro ela na ultima posição
         }
     }
+    printf("no depois: ");
+    mostrar_no(no_inserir);
 }
 
     /*
