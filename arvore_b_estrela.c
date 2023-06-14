@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "arvore_b_estrela.h"
+#include "auxiliares.h"
 
 #define M 5
 #define TAM_PAGINA 76
@@ -33,11 +34,21 @@ cabecalho_arvore_t *alocar_cabecalho_arvore(void){
 
 no_arvore_t *alocar_no(void){
     return malloc(sizeof(no_arvore_t));
-}
 
+}
 void desalocar_no(no_arvore_t *no){
     free(no);
 }
+
+chave_t *alocar_chave(){
+    chave_t *chave = malloc(sizeof(chave_t));
+    return chave;
+}
+
+void desalocar_chave(chave_t *chave){
+    free(chave);
+}
+
 
 void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho){
     printf("Cabeçalho da arvore: \n");
@@ -105,7 +116,7 @@ int get_nroNiveis(cabecalho_arvore_t *cabecalho){
 }
 
 void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis){
-    return cabecalho->nroNiveis = nova_nroNiveis;
+    cabecalho->nroNiveis = nova_nroNiveis;
 }
 
 void fluxo_StatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
@@ -113,6 +124,7 @@ void fluxo_StatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxo
 }
 
 void fluxo_CabecalhoArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
+    //Função que faz escreve ou lê o cabecalho do arquivo da árvore B*, a dependeder do 'funcFluxo'
     funcFluxo(&(cabecalho->status), sizeof(char), 1, arqArvore);
     funcFluxo(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
     funcFluxo(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);    
@@ -147,7 +159,7 @@ void fluxo_no(FILE *arqArvore, no_arvore_t *no_operar, FncFluxoMemSec funcFluxo)
     }
 }
 
-long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, int *P){
+long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int *P){
     //busca binária recursiva para nós da árvore B*
 
     /*O ponteiro P (int *P) é o valor do RRN do próximo nó para o qual a função de busca
@@ -180,7 +192,7 @@ long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, i
         *P = no_atual->P[meio];
         // printf("*P esquerda:%d\n", *P);
         //-Chamo a função recursivamente com os valores atualizados
-        return busca_bin_no(no_atual, ini, fim, chave, P);
+        return buscaBinNo(no_atual, ini, fim, chave, P);
     }else{
         //Se o valor que estou buscando é maior que o atual:
         //-Preparo a busca recursiva a partir do atual+1
@@ -189,7 +201,7 @@ long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, i
         *P = no_atual->P[meio+1];
         // printf("*P direita:%d\n", *P);
         //-Chamo a função recursivamente com os valores atualizados
-        return busca_bin_no(no_atual, ini, fim, chave, P);
+        return buscaBinNo(no_atual, ini, fim, chave, P);
     }
 }
 
@@ -270,7 +282,7 @@ no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *n
 
     //Obter o RRN do filho.
     int RRN_no_filho;
-    busca_bin_no(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
+    buscaBinNo(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
 
     //Obter o RRN da página irmã
     int RRN_irma = get_RRN_irma(no_mae, RRN_no_filho, retorna_irma);
@@ -280,7 +292,7 @@ no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *n
 
     no_arvore_t *no_irma = alocar_no();//aloco o nó
     fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
-    fluxo_no(arqArvore, no_irma, fread);//leio o nó
+    fluxo_no(arqArvore, no_irma, meu_fread);//leio o nó
 
     return no_irma;//retorno o nó
 }

@@ -25,5 +25,7 @@
 	void pular_cabecalho_csv(FILE *arq);
 	void mensagem_NULO(void);
 	void ignorar_palavra_stdin(void);
+	size_t meu_fwrite(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s);
+	size_t meu_fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s);
 
 #endif

@@ -291,3 +291,11 @@ void ignorar_palavra_stdin(void){
     char lixo[TAM_MAX_PALAVRA];
     scanf(" %s", lixo);
 }
+
+size_t meu_fwrite(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    fwrite((const void*)__ptr, __size, __n, __s);
+}
+
+size_t meu_fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    fread(__ptr, __size, __n, __s);
+}

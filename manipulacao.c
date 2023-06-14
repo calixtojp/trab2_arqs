@@ -50,6 +50,21 @@ Arvore_t *alocar_arvore(void){
     return arvore_retorno;
 }
 
+FncAcoes *alocar_acoes(){
+    return malloc(sizeof(FncAcoes));
+}
+
+void desalocar_acoes(FncAcoes *acoes){
+    free(acoes);
+}
+
+void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoNo no, FncAcaoFinal final){
+    acoes->reg_arv = reg_arv;
+    acoes->reg_seq = reg_seq;
+    acoes->no = no;
+    acoes->final = final;
+}
+
 void ler_nome_arq_dados(ArqDados_t *arq_dados){
     int retorno_scanf = scanf(" %s", arq_dados->nomeArqDados); 
     if(retorno_scanf != 1){
@@ -101,21 +116,19 @@ void ler_cabecalho_dados(ArqDados_t *arq_dados){
 }
 
 void ler_cabecalho_arvore(Arvore_t *arvore){
-    ler_cabecalho_arq_arvore(arvore->arqArvore, arvore->cabecalhoArvore);
+    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fwrite);
+}
+
+char *getNomeArqDados(ArqDados_t *arq_dados){
+    return arq_dados->nomeArqDados;
+}
+
+char *getNomeArvore(Arvore_t *arvore){
+    return arvore->nomeArqArvore;
 }
 
 int getTamCabecalhoDados(ArqDados_t *arq_dados){
     return len_cabecalho_dados();
-}
-
-void printa_busca(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
-    //Função que ignora os campos desnecessários e, em seguida, printa os campos de um registro.
-    
-    /*Para que toda as funções de 'acao' em 'processaRegistros()' sejam do mesmo tipo (FncAcao),
-    é preciso sempre receber os mesmos parâmetros, mesmo que não sejam usados. Assim é necessário
-    ignorar alguns desses parâmetros.*/
-
-    mostrar_campos(registro);
 }
 
 int get_nroRegTotal(ArqDados_t *arq_dados){
@@ -129,14 +142,6 @@ int get_nroRegValidos(ArqDados_t *arq_dados){
     resultado += get_nroRegArq(arq_dados->cabecalhoDados);
     resultado -= get_nroRegRem(arq_dados->cabecalhoDados);
     return resultado;
-}
-
-char *getNomeArqDados(ArqDados_t *arq_dados){
-    return arq_dados->nomeArqDados;
-}
-
-char *getNomeArvore(Arvore_t *arvore){
-    return arvore->nomeArqArvore;
 }
 
 void levaFinalCursorDados(ArqDados_t *arq_dados){
@@ -184,13 +189,6 @@ void desalocar_InfoDados(InfoDados_t *informacao){
     free(informacao->vals_int);
     free(informacao);
 }
-
-void achouReg(int flag){
-    if(flag <= 0){
-        printf("Registro inexistente.\n");
-    }
-}
-
 int testarStatusArvore(Arvore_t *arvore){
 	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
     if(getStatusArvore(arvore->cabecalhoArvore) == '1'){
@@ -222,79 +220,66 @@ int busca_por_indexado(InfoDados_t *criterios){
     }
     return -1;
 }
-        /*insercao(RRN_atual, RRN_anterior, chave_inserir, chave_promovida, ponteiro_promovido)*/  
 
-void busca_arvore_rec(Arvore_t *arvore, int RRN_atual, int *chave, chave_t *chavePromovida){
-    /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado é idCrime.
-    Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN do nó que está sendo verificado.
-    O retorno da função é o byteOffset do registro que tem o idCrime buscado. Caso esse registro não exista, o retorno é -1.*/
-    // printf("RRN_atual:%d\n", RRN_atual);
+void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes, int *chave, 
+                        chave_t *chave_promovida, int RRN_atual){
+    /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado 
+    é idCrime. Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN 
+    do nó que está sendo verificado. Quando encontrado um nó dessa árvore que contém o idCrime 
+    buscado, pode-se fazer uma ação sobre todo o nó ou sobre o registro que possui esse idCrime.*/
 
     if(RRN_atual == -1){//critério de parada
-        //Não há registro com o idCrime buscado
-        //Nó vazio
-        /*ACAO PRINTAR*/ 
+        //Nó inexistente, ou seja, não há registro com o idCrime buscado
+
+        //chamo a ação com um byteOffset nulo
+        acoes->reg_arv(arq_dados, criterios, -1);
         return;
     }
 
     //Leio o nó que quero verificar
     fseek(arvore->arqArvore, (RRN_atual+1) * arvore->tam_pagina, SEEK_SET);
     no_arvore_t *no_aux = alocar_no();
-    fluxo_no(arvore->arqArvore, no_aux, fread);
-    // mostrar_no(no_aux);
-    desalocar_no(no_aux);
+    fluxo_no(arvore->arqArvore, no_aux, meu_fread);
 
-    /*Defino P como sendo o ponteiro para o próximo nó (na próxima chamada recursiva dessa função, ele será o 'RRN_atual').
+    /*Defino P como sendo o ponteiro para o próximo nó (na próxima
+    chamada recursiva dessa função, ele será o 'RRN_atual').
     Atribuo um valor nulo de início.*/
     int P = -1;
     
-    /*Defino Pr como sendo o byteOffset do registro encontrado.*/
-    long long int Pr = busca_bin_no(no_aux, 0, get_nChaves(no_aux) - 1, chave, &P);
+    //Defino Pr como sendo o byteOffset do registro encontrado.
+    long long int Pr =  -1;
 
-    // printf("Pr:%lld|P:%d|chave:%d\n", Pr, P, chave);
+    /*Busco a chave no nó atual. Se encontrar, coloco seu byteOffset em 'Pr'. Se não, coloco
+    o RRN do próximo nó no qual devo buscar em 'P'*/
+    Pr = buscaBinNo(no_aux, 0, get_nChaves(no_aux) - 1, *chave, &P);
 
     if(Pr == -1){
         //se não encontrou o valor buscado no nó lido, 
         //chamo a função recursivamente para o próximo nó (valor armazenado em P)
-        busca_arvore_rec(arvore, P, chave);
+        buscaArvoreRec(arq_dados, arvore, criterios, acoes, chave, chave_promovida, P);
         /*insercao(RRN_atual, RRN_anterior, &chave_inserir, &chave_promovida, ponteiro_promovido)*/  
     }else{
         //Se encontrou, retorno o byteOffset
-       /*ACAO PRINTAR*/ 
-        return Pr;
+        acoes->reg_arv(arq_dados, criterios, Pr);
     }
+
+    desalocar_no(no_aux);
 }
 
-void processaNo(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
+void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcoes *acoes){
     int RRN_raiz = get_noRaiz(arvore->cabecalhoArvore);
-    int achei_reg = -1;
 
-    //chave_promo
-    //ponteiro_promovido
+    chave_t *chave = alocar_chave();
 
     //chamo a função recursiva de busca na árvore B*, a partir do nó raiz
-    busca_arvore_rec(arvore, RRN_raiz, criterios->vals_int[pos_crit],acao1,acao2);
+    buscaArvoreRec(arq_dados, arvore, criterios, acoes, &(criterios->vals_int[pos_crit]), chave, RRN_raiz);
 
-    /*a função busca_arvore_rec() retorna o byteOffset do registro encontrado ou retorna -1, caso não encontre*/
-    
-    if(byteOffset != -1){
-        //Se algum registro foi encontrado, testo os outros critérios de busca
-        fseek(arq_dados->arqDados, byteOffset, SEEK_SET);
-        dados_t *registro = alocar_dados();
-        ler_bin_registro(registro, arq_dados->arqDados);
-
-        if(testar_criterios(registro, criterios->nomes, criterios->vals_str, criterios->vals_int, criterios->qtd_crit)){
-            //se o registro satisfaz os critérios de busca, realizo a ação.
-            acao(arq_dados, arvore, registro);
-            achei_reg = 1;
-        }
-    }
-
-    final(achei_reg);
+    desalocar_chave(chave);
 }
 
-void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
-    
+void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, FncAcoes *acoes){
+    //função que faz busca sequencial no arquivo de dados
+
     int achei_reg_val = 0;
     //Flag que indica se algum registro satisafaz todos os critérios de busca.
     //Recebe -1 se nenhum satisfaz ou 1 se pelo menos 1 satisfaz
@@ -309,12 +294,12 @@ void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criter
     while(consegui_ler>0){
         //Se consegui ler, avalio os criterios de busca
 
-        if(testar_criterios(registro,criterios->nomes,criterios->vals_str,criterios->vals_int,criterios->qtd_crit)){
+        if(testarCriterios(registro,criterios->nomes,criterios->vals_str,criterios->vals_int,criterios->qtd_crit)){
             ++cont;
             //se o registro satisfaz todos os criterios, realizo a ação 
             achei_reg_val = 1;//achei pelo menos 1 registro que satisfaz os critérios
 
-            acao(arq_dados, arvore, registro);
+            acoes->reg_seq(registro);
         }
         byteOffSet_atual += consegui_ler;
         //sempre desaloco o registro, pois preciso desalocar os campos de tamanho variavel do registro
@@ -327,32 +312,30 @@ void busca_seq_dados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criter
 
     free(registro);
     
-    final(achei_reg_val);
+    acoes->final(achei_reg_val);
 }
 
-void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcao acao, FncFinaliza final){
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes){
     /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
     Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
 
     int posicao_criterio = busca_por_indexado(criterios);
     
     if(posicao_criterio >= 0 && get_noRaiz(arvore->cabecalhoArvore) != -1){
-        /*se a árvore B* indexa algum dos critérios de busca, então faço a busca usando-a.*/
-        busca_arvore(arq_dados,arvore,posicao_criterio,criterios,acao,final);
+        /*se a árvore B* não é vazia e indexa algum dos critérios de busca, então faço a busca usando-a.*/
+        buscaArvore(arq_dados,arvore,posicao_criterio,criterios,acoes);
     }else{
-
         //se não, faz-se busca sequencial no arquivo de dados
     
         //Para isso, deve-se reiniciar o ponteiro do arquivo de dados para o primeiro registro de dados (pulando o cabecalho) 
         //para fazer um novo processamento, pois não há garantia de que o ponteiro esteja corretamente posicionado
         fseek(arq_dados->arqDados,len_cabecalho_dados(),SEEK_SET);
         //em seguida, chama-se a função que realiza a busca sequencial
-        busca_seq_dados(arq_dados, arvore, criterios, acao,final);
+        buscaSeqDados(arq_dados, arvore, criterios, acoes);
     }
-
 }
 
-void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
+/*void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
 
     // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
     // Se é árvore vazia:
@@ -382,7 +365,7 @@ void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior,
 
         insere_ordenado_no(chave_inserir, no_raiz);//escrevo as informações do nó
 
-        fluxo_no(arvore->arqArvore, no_raiz, fwrite);//escrevo o nó em memória secundária
+        fluxo_no(arvore->arqArvore, no_raiz, meu_fwrite);//escrevo o nó em memória secundária
     }else{//Se a árvore não é vazia
         printf("arvore não está vazia\n");
         if(get_nChaves(no_atual) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
@@ -405,10 +388,65 @@ void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior,
         }
     }
 }
+*/
 
+/*---------------------------------------AÇÕES-------------------------------------------*/
+void achouReg(int flag){
+    /*Funcao do tipo FncAcaoFinal que, após testar todos os registros do arquivo de dados, 
+    informa que não existe registro que satisfaz os critérios de busca, caso isso seja verdade*/
 
-void noop(void){
+    if(flag <= 0){
+        printf("Registro inexistente.\n");
+    }
+}
 
+void validaPrinta(ArqDados_t *arq_dados, InfoDados_t *criterios, long int byteOffset){
+    /*Função do tipo FncAcaoRegArv que valida os critérios de busca por um registro. 
+    Como essa função só é chamada dentro da função buscaArvoreRec(), e a árvore B* é 
+    indexada apenas por idCrime, sabemos que a busca foi feita sobre o idCrime, que não 
+    permite repetição. Ou seja, só há um registro que satisfaz o critério de busca por 
+    idCrime, logo só falta confirmar se ele satisfaz os outros critérios. Se ele satisfaz, 
+    ele deve ser printado. Se não satisfaz, posso afirmar que não existe registro que 
+    satisfaça os critérios de busca.*/
+    
+    if(byteOffset != -1){
+        fseek(arq_dados->arqDados, byteOffset, SEEK_SET);
+        dados_t *registro = alocar_dados();
+        ler_bin_registro(registro, arq_dados->arqDados);
+
+        if(testarCriterios(registro, criterios->nomes, criterios->vals_str, criterios->vals_int, criterios->qtd_crit)){
+            //se o registro satisfaz os critérios de busca, printo ele.
+            mostrar_campos(registro);
+            return;
+        }
+    }
+
+    /*se o byteOffset é inválido, ou seja, não encontrado nenhum registro com o idCrime buscado,
+    ou o registro encontrado não satisfaz os demais critérios de busca,
+    indico que não há registro que satisfaz a busca*/
+    printf("Registro Inexistente.\n");
+}
+
+void printa_busca(dados_t *registro){
+    //Função do tipo FncAcaoRegSeq que printa os campos de um registro
+    
+    mostrar_campos(registro);
+}
+
+void NoOpAcaoNo(int){
+    //função do tipo FncAcaoNo que não faz nada, para os casos em que funções desse tipo não serão usadas
+}
+
+void NoOpAcaoFinal(void){
+    //função do tipo FncAcaoFinal que não faz nada, para os casos em que funções desse tipo não serão usadas
+}
+
+void NoOpAcaoRegArv(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignorar3){
+    //função do tipo FncAcaoRegArv que não faz nada, para os casos em que funções desse tipo não serão usadas
+}
+
+void NoOpAcaoRegSeq(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignorar3){
+    //função do tipo FncAcaoRegSeq que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
 void insere_reg(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
@@ -565,7 +603,7 @@ void escreverStatusDados(ArqDados_t *arq_dados){
 }
 
 void escreverStatusArvore(Arvore_t *arvore){
-    fluxo_StatusArvore(arvore->arqArvore, arvore->cabecalhoArvore, fwrite);
+    fluxo_StatusArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fwrite);
 }
 
 void escreverCabecalhoDados(ArqDados_t *arq_dados){
@@ -573,5 +611,5 @@ void escreverCabecalhoDados(ArqDados_t *arq_dados){
 }
 
 void escreverCabecalhoArvore(Arvore_t *arvore){
-    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, fwrite);
+    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fwrite);
 }

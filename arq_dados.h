@@ -66,7 +66,7 @@
 	void mostrar_campo_variavel(char *palavra);
 	cabecalho_t* ler_dados_cabecalho(FILE *arq_bin);
 	void leRegStdin(dados_t *reg);
-	int testar_criterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit);
+	int testarCriterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit);
 	char getStatusDados(cabecalho_t *cabecalho);
 	void escrever_campo_removido(FILE *arq, dados_t *dados);
 	void remocaoLogica(dados_t *registro, cabecalho_t *cabecalho);

@@ -8,7 +8,7 @@
     typedef struct no_arvore no_arvore_t;
     // int retorna_irma_esq(int pos_vet_P, int n, no_arvore_t *no)
     typedef int (*FncGetRRNirma) (int, no_arvore_t*);
-    typedef size_t (*FncFluxoMemSec) (const void*, size_t, size_t, FILE*);//funções de fluxo com a memória secundária (fread/fwrite)
+    typedef size_t (*FncFluxoMemSec) (void*, size_t, size_t, FILE*);//funções de fluxo com a memória secundária (fread/fwrite)
     //size_t fwrite(const void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s)
     //size_t fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __stream)
 
@@ -16,6 +16,8 @@
     cabecalho_arvore_t *alocar_cabecalho_arvore(void);
     no_arvore_t *alocar_no(void);
     void desalocar_no(no_arvore_t *no);
+    chave_t *alocar_chave();
+    void desalocar_chave(chave_t *chave);
 
     void mostrar_no(no_arvore_t *no);
 
@@ -41,7 +43,7 @@
     void fluxo_no(FILE *arqArvore, no_arvore_t *no_operar, FncFluxoMemSec funcFluxo);
 
     //Demais funções
-    long long int busca_bin_no(no_arvore_t *no_atual, int ini, int fim, int chave, int *P);
+    long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int *P);
     void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir);
     int redistribuicao(FILE *arqArvore, no_arvore_t *no_mae, no_arvore_t *no_filho, chave_t *chave_inserir);
 
