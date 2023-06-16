@@ -770,7 +770,7 @@ void leRegStdin(dados_t *reg){
 }
 
 
-int testar_criterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit){
+int testarCriterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit){
 	//funcao que testa os criterios de busca de um registro.
 	//Se o registro satisfaz todos os criterios, retorna 1
 	//Se nao satisfaz pelo menos 1, retorno 0

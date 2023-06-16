@@ -315,3 +315,11 @@ int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comp
         return busca_bin_rec(vetor, ini, fim, chave, comparacao);
     }
 }
+
+size_t meu_fwrite(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    fwrite((const void*)__ptr, __size, __n, __s);
+}
+
+size_t meu_fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    fread(__ptr, __size, __n, __s);
+}

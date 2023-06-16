@@ -108,6 +108,11 @@ void where(void){
         mensagem_erro();
     }
 
+    /*Declaro a struct com todas as ações necessárias para esse funcionalidade. 
+    Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
+
+    FncAcoes *acoes = alocar_acoes();
+    set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoNo, achouReg);
     //Loop que faz n buscas
     for(int i=1; i<=n; i++){
         printf("Resposta para a busca %d\n",i);
@@ -118,14 +123,13 @@ void where(void){
         /*Processar o registro usando a ação 'printa_busca'
         e o final 'achouReg', que diz se o registro é inexistente, 
         caso nenhum satisfaça os critérios de busca*/
-
+        
         //MUDAR
-        processaRegistros(arq_dados,arvore,criterios,printa_busca,achouReg);
+        processaRegistros(arq_dados,arvore,criterios,acoes);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
     }
-
     //Fechar arquivos
     fechar_arvore(arvore);
     fechar_arq_dados(arq_dados);
@@ -133,6 +137,7 @@ void where(void){
     //Desalocar tipos utilizados
     desalocar_ArqDados(arq_dados);
     desalocar_Arvore(arvore);
+    desalocar_acoes(acoes);
 }
 
 //Funcionalidade [10]
@@ -194,8 +199,10 @@ void insert_into(){
         e como não é necessário uma ação final, a ação final é um 'no operation
         */
 
+
+
         //MUDAR
-        processaRegistros(arq_dados,arvore,dados_inserir,insere_reg,noop);
+        //processaRegistros(arq_dados,arvore,dados_inserir,insere_reg,noop);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(dados_inserir);

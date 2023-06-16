@@ -26,5 +26,7 @@
 	void mensagem_NULO(void);
 	void ignorar_palavra_stdin(void);
 	int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comparacao);
+	size_t meu_fwrite(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s);
+	size_t meu_fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s);
 
 #endif
