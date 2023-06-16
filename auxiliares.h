@@ -1,7 +1,7 @@
 #ifndef _AUXILIARES
 #define _AUXILIARES
 
-    typedef  int(*FncComparacao)(void*,int,void*);
+    typedef int (*FncComparacao) (void*,int,void*);
 
 	void binarioNaTela(char *nomeArquivoBinario);
 	void readline(char *string);
@@ -25,5 +25,6 @@
 	void pular_cabecalho_csv(FILE *arq);
 	void mensagem_NULO(void);
 	void ignorar_palavra_stdin(void);
+	int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comparacao);
 
 #endif

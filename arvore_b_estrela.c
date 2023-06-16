@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "auxiliares.h"
 #include "arvore_b_estrela.h"
 
 #define M 5
@@ -26,6 +27,12 @@ struct no_arvore{
     chave_t chaves[M-1];
 };
 
+typedef struct temp_no{
+    int n;
+    chave_t *chaves;
+    int *ponteiros;
+}temp_no_t;
+
 cabecalho_arvore_t *alocar_cabecalho_arvore(void){
     cabecalho_arvore_t *cabecalho_retorno = malloc(sizeof(cabecalho_arvore_t));
     return cabecalho_retorno;
@@ -36,6 +43,46 @@ no_arvore_t *alocar_no(void){
 }
 
 void desalocar_no(no_arvore_t *no){
+    free(no);
+}
+
+pagina_t *aloca_pagina(void){
+    pagina_t *pagina = malloc(sizeof(pagina_t));
+    pagina->no = alocar_no();
+    return pagina;
+}
+
+void desaloca_pagina(pagina_t *pagina){
+    desalocar_no(pagina->no);
+    free(pagina);
+}
+
+chave_t *aloca_vet_chaves(int qtd_chaves){
+    return malloc(sizeof(chave_t)*qtd_chaves);
+}
+
+void desaloca_vet_chaves(chave_t *vet_chaves){
+    free(vet_chaves);
+}
+
+int *aloca_vet_ponteiros(int qtd_ponteiros){
+    return malloc(sizeof(int)*qtd_ponteiros);
+}
+
+void desaloca_vet_ponteiros(int *vet_ponteiros){
+    free(vet_ponteiros);
+}
+
+temp_no_t *aloca_temp_no(int n){
+    temp_no_t *no_retorno = malloc(sizeof(temp_no_t));
+    no_retorno->n = n;//número de chaves no nó
+    no_retorno->chaves = aloca_vet_chaves(n);
+    no_retorno->ponteiros = aloca_vet_ponteiros(n+2);
+}
+
+void desaloca_temp_no(temp_no_t *no){
+    desaloca_vet_chaves(no->chaves);
+    desaloca_vet_ponteiros(no->ponteiros);
     free(no);
 }
 
@@ -201,8 +248,31 @@ void set_nivel_no(no_arvore_t *no, int nivel){
     no->nivel = nivel;
 }
 
+int compara_ponteiros(void *vet_ponteiros, int pos_comparar, void *chave_comparar){
+    int *vet_ponteiros_real = (int*)vet_ponteiros;
+    int chave_pos = vet_ponteiros_real[pos_comparar];
+    int chave_compara_real = *((int*)chave_comparar);
+    return chave_pos - chave_compara_real;
+}
+
 int compara_chaves(chave_t *chave_a, chave_t *chave_b){
     return chave_a->C - chave_b->C;
+}
+
+void copia_vet_chaves(chave_t *origem, chave_t *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){
+    int cont_origem = ini_origem;
+    int cont_destino = ini_destino;
+    while(cont_origem <= fim_origem){
+        insere_chave_em_vet_chaves(destino, &(origem[cont_origem]), cont_destino);
+        ++cont_destino;++cont_origem;        
+    }    
+}
+
+void temp_vetPont_para_nos(int *origem, int tam_origem, int pos_pontPromovido, no_arvore_t *no_esq, no_arvore_t *no_dir){
+    //Passo todos os ponteiros do nó da esquerda.
+    for(int i = 0; i < no_esq->n + 1; ++i){
+
+    }
 }
 
 void insere_chave_em_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int pos_inserir){
@@ -210,10 +280,34 @@ void insere_chave_em_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int
     (vet_chaves[pos_inserir]).Pr = chave_inserir->Pr;
 }
 
-void insere_ordenado_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int tam_vet_chaves){//[0, 3, 4] <- 2 => [0, 2, 3, 4]
+int insere_ponteiro_ordenado(int *vet_ponteiros, int tam_vet_ponteiros,int ponteiro_inserir){
+    int fez_shifitada = -1;//flag que indica se houve shifitada
+    for(int i = 0; i < tam_vet_ponteiros; ++i){
+        if(ponteiro_inserir < vet_ponteiros[i]){
+            //Se a o ponteiro que vou inserir for menor que a 'i', então vou inseri-lo
+            //na posição i e shifitar todos os demais para a posição à direita no vetor
+            fez_shifitada = 1; //altero a flag
+            for(int j = tam_vet_ponteiros; j > i; --j){//Começo pelo último ponteiro e vou até o ponteiro adjacente à direita de 'i'
+                // insiro o ponteiro da posição j-1 na posição j
+                vet_ponteiros[j] = vet_ponteiros[j-1];
+            }
+            //insere ponteiro em sua posição (i)
+            vet_ponteiros[i] = ponteiro_inserir;
+            return i;
+        }
+    }
+    if(fez_shifitada == -1){//Se não fez shifitada, então o ponteiro que vou inserir é o maior do vetor
+        vet_ponteiros[tam_vet_ponteiros] = ponteiro_inserir;//então insiro na ultima posição
+        return tam_vet_ponteiros;
+    }
+}
+
+int insere_ordenado_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int tam_vet_chaves){//[0, 3, 4] <- 2 => [0, 2, 3, 4]
     //Insere  uma chave (em um vetor de chaves) em sua posição ideal, de modo a manter a ordem.
+    //Retorna a posição em que a chave foi inserida
     if(tam_vet_chaves == 0){//vetor vazio, insiro na primeira posição
         insere_chave_em_vet_chaves(vet_chaves, chave_inserir, 0);
+        return 0;
     }else{
         int fez_shifitada = -1;//flag que indica se houve shifitada
         for(int i = 0; i < tam_vet_chaves; ++i){
@@ -227,11 +321,12 @@ void insere_ordenado_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int
                 }
                 //insere chave em sua posição (i)
                 insere_chave_em_vet_chaves(vet_chaves, chave_inserir, i);
-                break;
+                return i;
             }
         }
         if(fez_shifitada == -1){//Se não fez shifitada, então a chave que vou inserir é a maior chave do nó
             insere_chave_em_vet_chaves(vet_chaves, chave_inserir, tam_vet_chaves);//então insiro ela na ultima posição
+            return tam_vet_chaves;
         }
     }
 }
@@ -265,35 +360,153 @@ int get_RRN_irma(no_arvore_t *no_mae, int RRN_filho, FncGetRRNirma retorna_irma)
     }
 }
 
-no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *no_filho, FncGetRRNirma retorna_irma){
-    int menor_C_filho = (no_filho->chaves)[0].C;//menor chave do filho
-
-    //Obter o RRN do filho.
-    int RRN_no_filho;
-    busca_bin_no(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
-
+pagina_t *get_pagina_irma(FILE *arqArvore,pagina_t *pgn_mae, pagina_t *pgn_atual, FncGetRRNirma retorna_irma){
     //Obter o RRN da página irmã
-    int RRN_irma = get_RRN_irma(no_mae, RRN_no_filho, retorna_irma);
+    int RRN_irma = get_RRN_irma(pgn_mae->no, pgn_atual->RRN_no, retorna_irma);
     if(RRN_irma == -1){//Não tem irmã
         return NULL;
     }
 
-    no_arvore_t *no_irma = alocar_no();//aloco o nó
-    fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
-    fluxo_no(arqArvore, no_irma, fread);//leio o nó
+    pagina_t *pagina_irma = aloca_pagina();//aloco a página
+    pagina_irma->RRN_no = RRN_irma;//configuro o RRN
 
-    return no_irma;//retorno o nó
+    fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
+    fluxo_no(arqArvore, pagina_irma->no, fread);//leio o nó
+
+    return pagina_irma;//retorno o nó   
 }
 
-int redistribuicao(FILE *arqArvore, no_arvore_t *no_mae, no_arvore_t *no_filho, chave_t *chave_inserir){
-    //Primeiramente, encontrar a página irmã à esquerda
-    no_arvore_t *no_irma = get_pagina_irma(arqArvore,no_mae, no_filho, retorna_irma_esq);
-    if(no_irma = NULL){//Se não conseguiu obter a página irmã à esquerda
+int get_pos_chave_mae(pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t *pgn_irma){
+    int pos_RRNatual_vet_pont = busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_atual->RRN_no), compara_ponteiros);
+    int pos_RRNirma_vet_pont = busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_irma->RRN_no), compara_ponteiros);
 
+    if(pos_RRNatual_vet_pont > pos_RRNirma_vet_pont){
+        return pos_RRNirma_vet_pont;
+    }else{
+        return pos_RRNatual_vet_pont;
     }
 }
 
+void insere_ordenado_pontPromovido(no_arvore_t *no_esq, no_arvore_t *no_dir, int ponteiro_promovido, int pos){
+    int tam_vet_pont_temp = no_esq->n + no_dir->n + 3;//tamanho do vetor temporário de ponteiros
+    //(o +3 se deve ao fato de que existem n+1 ponteiros em cada página com 'n' chaves e +1 ponteiro que é o promovido)
+    int vet_temp[tam_vet_pont_temp]; 
+    // vet_temp[pos+1] = ponteiro_promovido;
+    int i;
+    for(i = 0; i < no_esq->n+1; ++i){//copio os ponteiros da página da esquerda
+        vet_temp[i] = no_esq->P[i];
+    }
 
+    for(int j = 0; j < no_dir->n+1; ++i, ++j){//copio os ponteiros da página da direita
+        vet_temp[i] = no_dir->P[j];
+    }
+
+    insere_ponteiro_ordenado(vet_temp, tam_vet_pont_temp, ponteiro_promovido);//coloco o ponteiro promovido
+    
+}
+
+void insere_no_temp(temp_no_t *temp, no_arvore_t *no_esq, no_arvore_t *no_dir, InfoPromovida_t *info, chave_t *chave_mae){
+
+    //--Inserir chaves--
+
+    //as chaves do nó à esquerda.
+    for(int i = 0; i < no_esq->n; ++i){
+        insere_ordenado_vet_chaves(temp->chaves, &(no_esq->chaves[i]), i+1);
+    }
+
+    //as chaves do nó à direita.
+    for(int i = 0; i < no_dir->n; ++i){
+        insere_ordenado_vet_chaves(temp->chaves, &(no_dir->chaves[i]), i+1);
+    }
+
+    //a chave da mãe
+    insere_ordenado_vet_chaves(temp->chaves, chave_mae, temp->n - 1);
+
+    //a chave promovida
+    int pos_chave_promovida = insere_ordenado_vet_chaves(temp->chaves, info->chave_promovida, temp->n);
+
+    //--Inserir ponteiros--
+
+    //os ponteiros do nó da esquerda
+    for(int i = 0; i < )
+}
+
+void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir, InfoPromovida_t *info){
+
+    int tam_no_temp = pgn_esq->no->n + pgn_dir->no->n + 2;
+    temp_no_t *temp_no = aloca_temp_no(tam_no_temp);
+
+    //Coloco as informações no nó temporário.
+    insere_no_temp();
+
+    //Adiciono, no vetor temporário, as chaves da irmã.
+    insere_chaves_no_vet_chaves(pgn_irma->no, vet_chaves_aux, tam_vet_chaves_aux);
+
+    //Adiciono, no vetor temporário, a chave da mãe.
+    //para isso, devo descobrir qual chave da mãe devo adicionar no vetor de chaves
+    int pos_chave_mae = get_pos_chave_mae(pgn_mae, pgn_atual, pgn_irma);
+    insere_ordenado_vet_chaves(vet_chaves_aux, &(pgn_mae->no->chaves[pos_chave_mae]),tam_vet_chaves_aux);
+
+    //Adiciono, no vetor temporário, as chaves da página atual 
+    insere_chaves_no_vet_chaves(pgn_atual->no, vet_chaves_aux, tam_vet_chaves_aux);
+
+    //Adiciono, no vetor temporário, a chave que foi inserida e obtenho a posição em que tal chave foi inserida
+    int pos_chave_inserida = insere_ordenado_vet_chaves(vet_chaves_aux, info->chave_promovida, tam_vet_chaves_aux);
+
+    //Agora devo inserir as chaves do vetor temporáio nas páginas de modo a distribui-las corretamente. Para isso:
+    //-devo inserir a chave do meio na página mãe
+    int meio = tam_vet_chaves_aux/2;
+    insere_chave_em_vet_chaves(pgn_mae, &(vet_chaves_aux[meio]), pos_chave_mae);
+    //-devo inserir as demais chaves
+    if(compara_chaves(&(pgn_atual->no->chaves[0]), &(pgn_mae->no->chaves[pos_chave_mae]))>0){//Se a menor chave atual for maior a chave mãe
+        //Então a página irmã é a da esquerda, logo devo inserir os menores valores nela
+        insere_ordenado_pontPromovido(pgn_irma->no, pgn_atual->no, info->ponteiro_promovido, pos_chave_inserida);
+        temp_vetPont_para_nos(vet_ponts_aux, tam_vet_ponts_aux, pos_chave_inserida, pgn_irma->no, pgn_atual->no);
+        copia_vet_chaves(vet_chaves_aux, pgn_irma->no->chaves, 0, meio-1, 0, meio-1);
+        //e insiro os demais na página atual
+        copia_vet_chaves(vet_chaves_aux, pgn_atual->no->chaves, meio+1, tam_vet_chaves_aux-1, 0, tam_vet_chaves_aux - meio - 2);
+    }else{
+        //Então a página irmã é a da direita, logo devo inserir os maiores nela
+        insere_ordenado_pontPromovido(pgn_atual->no, pgn_irma->no, info->ponteiro_promovido, pos_chave_inserida);
+        temp_vetPont_para_nos(vet_ponts_aux, tam_vet_ponts_aux, pos_chave_inserida, pgn_atual->no, pgn_irma->no);
+        copia_vet_chaves(vet_chaves_aux, pgn_irma->no->chaves, meio+1, tam_vet_chaves_aux-1, 0, tam_vet_chaves_aux - meio - 2);
+        //e insiro os demais na página atual
+        copia_vet_chaves(vet_chaves_aux, pgn_atual->no->chaves, 0, meio-1, 0, meio-1);
+    }
+
+    //Escrever os nós que foram modificados
+    fseek(arqArvore, (pgn_mae->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_mae->no, fwrite);
+    fseek(arqArvore, (pgn_irma->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_irma->no, fwrite);
+    fseek(arqArvore, (pgn_atual->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_atual->no, fwrite);
+}
+
+int redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, InfoPromovida_t *info){
+    //Primeiramente, encontrar a página irmã à esquerda.
+    pagina_t *pgn_irma = get_pagina_irma(arqArvore,pgn_mae, pgn_atual, retorna_irma_esq);
+    if(pgn_irma != NULL && (pgn_irma->no->n < M-1)){//Se consegui obter a página irmã à esquerda e ela não está cheia
+        //então faço a redistribuição com ela.
+        redistribui_paginas(arqArvore, pgn_mae, pgn_irma, pgn_atual, info);
+        return 1;//retorno o valor '1' que significa positivo.
+    }
+
+    //Tento encontrar a página irmã à direita.
+    no_arvore_t *pgn_irma = get_pagina_irma(arqArvore, pgn_mae, pgn_atual, retorna_irma_dir);
+    if(pgn_irma != NULL && (pgn_irma->no->n < M-1)){//Se consegui obter a página irmã à direita e ela não está cheia
+        //então faço a redistribuição com ela.
+        redistribui_paginas(arqArvore, pgn_mae, pgn_atual, pgn_irma, info);
+        return 1;//retorno o valor '1' que significa positivo.
+    }
+
+    //Se não retornei nos casos acima, é porque não consegui redistribuir com nenhuma página irmã.
+    return -1;//Logo, devo retornar que não consegui redistribuir
+}
+
+void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_atual, chave_t *chave_inserir, int *ponteiro_promovido){
+    
+}
 
     /*
     INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):

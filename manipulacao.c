@@ -352,7 +352,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
 
 }
 
-void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
+void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, int RRN_no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
 
     // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
     // Se é árvore vazia:
@@ -395,7 +395,7 @@ void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior,
                 split_1_para_2();
             }else{//Se estou inserindo em qualquer nó que não no raiz
                 //tento a redistribuição
-                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, no_anterior, no_atual, chave_inserir);
+                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, no_anterior, RRN_no_anterior, no_atual, chave_inserir, ponteiro_promovido);
                 if(!conseguiu_redistribuir){//Se não conseguiu redistribuir,
                     //Faço o split_2_para_3
                     split_2_para_3();
