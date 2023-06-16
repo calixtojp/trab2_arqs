@@ -47,4 +47,7 @@
     void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir);
     int redistribuicao(FILE *arqArvore, no_arvore_t *no_mae, no_arvore_t *no_filho, chave_t *chave_inserir);
 
+    //debug
+    void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho);
+
 #endif

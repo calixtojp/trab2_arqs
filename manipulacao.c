@@ -116,7 +116,7 @@ void ler_cabecalho_dados(ArqDados_t *arq_dados){
 }
 
 void ler_cabecalho_arvore(Arvore_t *arvore){
-    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fwrite);
+    fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fread);
 }
 
 char *getNomeArqDados(ArqDados_t *arq_dados){
@@ -190,6 +190,7 @@ void desalocar_InfoDados(InfoDados_t *informacao){
     free(informacao);
 }
 int testarStatusArvore(Arvore_t *arvore){
+
 	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
     if(getStatusArvore(arvore->cabecalhoArvore) == '1'){
         return 1;
@@ -424,7 +425,7 @@ void validaPrinta(ArqDados_t *arq_dados, InfoDados_t *criterios, long int byteOf
     /*se o byteOffset é inválido, ou seja, não encontrado nenhum registro com o idCrime buscado,
     ou o registro encontrado não satisfaz os demais critérios de busca,
     indico que não há registro que satisfaz a busca*/
-    printf("Registro Inexistente.\n");
+    printf("Registro inexistente.\n");
 }
 
 void printa_busca(dados_t *registro){
@@ -433,7 +434,7 @@ void printa_busca(dados_t *registro){
     mostrar_campos(registro);
 }
 
-void NoOpAcaoNo(int){
+void NoOpAcaoNo(int ignorar){
     //função do tipo FncAcaoNo que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 

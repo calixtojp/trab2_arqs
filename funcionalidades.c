@@ -113,7 +113,6 @@ void where(void){
 
     FncAcoes *acoes = alocar_acoes();
     set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoNo, achouReg);
-    
     //Loop que faz n buscas
     for(int i=1; i<=n; i++){
         printf("Resposta para a busca %d\n",i);
@@ -131,7 +130,6 @@ void where(void){
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
     }
-
     //Fechar arquivos
     fechar_arvore(arvore);
     fechar_arq_dados(arq_dados);
