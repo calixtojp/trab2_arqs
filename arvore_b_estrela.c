@@ -47,7 +47,6 @@ void desalocar_no(no_arvore_t *no){
     free(no);
 }
 
-<<<<<<< HEAD
 pagina_t *aloca_pagina(void){
     pagina_t *pagina = malloc(sizeof(pagina_t));
     pagina->no = alocar_no();
@@ -87,7 +86,6 @@ void desaloca_temp_no(temp_no_t *no){
     desaloca_vet_ponteiros(no->ponteiros);
     free(no);
 }
-=======
 chave_t *alocar_chave(){
     chave_t *chave = malloc(sizeof(chave_t));
     return chave;
@@ -97,7 +95,6 @@ void desalocar_chave(chave_t *chave){
     free(chave);
 }
 
->>>>>>> refs/remotes/origin/main
 
 void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho){
     printf("Cabeçalho da arvore: \n");
@@ -374,9 +371,6 @@ int get_RRN_irma(no_arvore_t *no_mae, int RRN_filho, FncGetRRNirma retorna_irma)
     }
 }
 
-<<<<<<< HEAD
-pagina_t *get_pagina_irma(FILE *arqArvore,pagina_t *pgn_mae, pagina_t *pgn_atual, FncGetRRNirma retorna_irma){
-=======
 no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *no_filho, FncGetRRNirma retorna_irma){
     int menor_C_filho = (no_filho->chaves)[0].C;//menor chave do filho
 
@@ -384,21 +378,15 @@ no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *n
     int RRN_no_filho;
     buscaBinNo(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
 
->>>>>>> refs/remotes/origin/main
     //Obter o RRN da página irmã
     int RRN_irma = get_RRN_irma(pgn_mae->no, pgn_atual->RRN_no, retorna_irma);
     if(RRN_irma == -1){//Não tem irmã
         return NULL;
     }
 
-<<<<<<< HEAD
     pagina_t *pagina_irma = aloca_pagina();//aloco a página
     pagina_irma->RRN_no = RRN_irma;//configuro o RRN
-=======
     no_arvore_t *no_irma = alocar_no();//aloco o nó
-    fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
-    fluxo_no(arqArvore, no_irma, meu_fread);//leio o nó
->>>>>>> refs/remotes/origin/main
 
     fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
     fluxo_no(arqArvore, pagina_irma->no, fread);//leio o nó
