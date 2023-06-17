@@ -59,8 +59,8 @@
     long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int *P);
     void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir);
     result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t *png_irma, InfoInserida_t *info);
-    void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_atual, InfoInserida_t *info);
-    void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info);
+    // void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_atual, InfoInserida_t *info);
+    // void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info);
 
     //debug
     void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho);
