@@ -58,7 +58,7 @@ void desalocar_acoes(FncAcoes *acoes){
     free(acoes);
 }
 
-void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoNo no, FncAcaoFinal final){
+void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoBranch no, FncAcaoFinal final){
     acoes->reg_arv = reg_arv;
     acoes->reg_seq = reg_seq;
     acoes->no = no;
@@ -227,8 +227,7 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
     /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado 
     é idCrime. Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN 
     do nó que está sendo verificado. Quando encontrado um nó dessa árvore que contém o idCrime 
-    buscado, pode-se fazer uma ação sobre todo o nó (e, talvez, vizinhos e antecessores) ou 
-    sobre o registro que possui esse idCrime.*/
+    buscado, pode-se fazer uma ação sobre todo o nó ou sobre o registro que possui esse idCrime.*/
 
     if(RRN_atual == -1){//critério de parada
         //Nó inexistente, ou seja, não há registro com o idCrime buscado
@@ -259,9 +258,9 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
         //se não encontrou o valor buscado no nó lido, 
         //chamo a função recursivamente para o próximo nó (valor armazenado em P)
         buscaArvoreRec(arq_dados, arvore, criterios, acoes, chave, chave_promovida, P);
-        acoes->no(P);
+        /*insercao(RRN_atual, RRN_anterior, &chave_inserir, &chave_promovida, ponteiro_promovido)*/  
     }else{
-        //Se encontrou, chamo a ação para esse registro, passando seu byteOffset (armazenado em Pr)
+        //Se encontrou, retorno o byteOffset
         acoes->reg_arv(arq_dados, criterios, Pr);
     }
 
@@ -329,7 +328,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
     }else{
         //se não, faz-se busca sequencial no arquivo de dados
     
-        //Para isso, deve-se reiniciar o ponteiro do arquivo de dados para o primeiro registro de dados (pulando o cabecalho)
+        //Para isso, deve-se reiniciar o ponteiro do arquivo de dados para o primeiro registro de dados (pulando o cabecalho) 
         //para fazer um novo processamento, pois não há garantia de que o ponteiro esteja corretamente posicionado
         fseek(arq_dados->arqDados,len_cabecalho_dados(),SEEK_SET);
         //em seguida, chama-se a função que realiza a busca sequencial
@@ -337,7 +336,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
     }
 }
 
-void insercao(Arvore_t *arvore, pagina_t *pgn_atual, pagina_t *pgn_anterior, InfoInserida_t *info_inserir){
+/*void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
 
     // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
     // Se é árvore vazia:
@@ -355,15 +354,7 @@ void insercao(Arvore_t *arvore, pagina_t *pgn_atual, pagina_t *pgn_anterior, Inf
     //             se não redistribuiu:
     //                 split_2_pra_3
 
-    if(info_inserir->info_valida <= 0){
-        /*Se não é uma informação válida para a inserção, significar que a ação de inserção foi chamada
-        na volta da recursão da inserção e nenhuma chave foi promovida. 
-        Logo, essa ação não realiza a inserção. Devo somente retornar.*/
-        return;
-    }
-
-    //Caso seja uma informação válida, devo realizar a inserção.
-
+    
     if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
         printf("arvore vazia\n");
         set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
@@ -372,44 +363,33 @@ void insercao(Arvore_t *arvore, pagina_t *pgn_atual, pagina_t *pgn_anterior, Inf
         no_arvore_t *no_raiz = alocar_no();
         set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));//o qual possui o nível mais alto
         set_nChaves(no_raiz, 0);//e inicialmente não possui nenhuma chave.
-        
-        //configurar cabeçalho da árvore:MUDAR
 
-
-
-        insere_ordenado_no(info_inserir->chave_inserida, no_raiz);//escrevo as informações do nó
+        insere_ordenado_no(chave_inserir, no_raiz);//escrevo as informações do nó
 
         fluxo_no(arvore->arqArvore, no_raiz, meu_fwrite);//escrevo o nó em memória secundária
-
-        desalocar_no(no_raiz);
     }else{//Se a árvore não é vazia
         printf("arvore não está vazia\n");
-        if(get_nChaves(pgn_atual->no) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
+        if(get_nChaves(no_atual) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
             printf("cabe no nó atual\n");
-            insere_ordenado_no(pgn_atual->no, info_inserir->chave_inserida);
+            insere_ordenado_no(no_atual, chave_inserir);
         }else{//Se a nova chave não cabe no no_atual
             printf("não cabe no nó atual\n");
-            if(get_nivel_no(pgn_atual->no) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
+            if(get_nivel_no(no_atual) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
                 //Faço o split_1_para_2
                 split_1_para_2();
             }else{//Se estou inserindo em qualquer nó que não no raiz
                 //tento a redistribuição
-                pagina_t *pgn_irma;
-                result_redistribuicao_t resultado;
-                resultado = redistribuicao(arvore->arqArvore, pgn_anterior, pgn_atual, pgn_irma, info_inserir);
-                if(resultado != redistribuiu){//Se não conseguiu redistribuir,
-                    if(resultado == retorna_dir){//significa que a página auxiliar é a página da direita e a atual é a da esquerda.
-                        split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_anterior, pgn_atual, pgn_irma, info_inserir);
-                    }else{//(ou seja, resultado == retorna_esq) então a página auxiliar é a página da esquerda e a atual é a da direita.
-                        split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_anterior, pgn_irma, pgn_atual, info_inserir);
-                    }
+                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, no_anterior, no_atual, chave_inserir);
+                if(!conseguiu_redistribuir){//Se não conseguiu redistribuir,
+                    //Faço o split_2_para_3
+                    split_2_para_3();
                 }
 
             }
         }
     }
 }
-
+*/
 
 /*---------------------------------------AÇÕES-------------------------------------------*/
 void achouReg(int flag){
