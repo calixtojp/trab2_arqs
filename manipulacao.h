@@ -73,7 +73,7 @@ char *getNomeArvore(Arvore_t *arvore);
 /*------------------------------------------AÇÕES---------------------------------*/
 FncAcoes *alocar_acoes();
 void desalocar_acoes(FncAcoes *acoes);
-void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoNo no, FncAcaoFinal final);
+void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoBranch no, FncAcaoFinal final);
 
 void validaPrinta(ArqDados_t *arq_dados, InfoDados_t *criterios, long int byteOffset);
 void NoOpAcaoRegArv(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignorar3);
