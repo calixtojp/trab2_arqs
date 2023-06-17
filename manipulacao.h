@@ -20,7 +20,7 @@ typedef struct InfoDados InfoDados_t;
 typedef void (*FncAcaoRegSeq) (dados_t*);
 typedef void (*FncAcaoRegArv) (ArqDados_t*, InfoDados_t*, long int);
 typedef void (*FncAcaoFinal) (int);
-typedef void (*FncAcaoNo) (int);
+typedef void (*FncAcaoBranch) (int);
 typedef long int (*FncGetByteOffSet) (void*, int);
 typedef int (*FncCampoNulo) (void*);
 
@@ -29,7 +29,7 @@ typedef struct acoes{
 
     FncAcaoRegArv reg_arv; //ação que atua sobre um registro encontrado a partir da busca na árvore B*
     FncAcaoRegSeq reg_seq; //ação que atua sobre um registro encontrado a partir da busca sequencial
-    FncAcaoNo no; //Ação que atua sobre um nó da árvore B*
+    FncAcaoBranch no; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
     FncAcaoFinal final; //Ação executada depois das ações principais
 }FncAcoes;
 

@@ -29,7 +29,7 @@ struct no_arvore{
 };
 
 typedef struct temp_no{
-    int n;
+    int n;//quantidade de chaves no nó
     chave_t *chaves;
     int *ponteiros;
 }temp_no_t;
@@ -371,12 +371,9 @@ int get_RRN_irma(no_arvore_t *no_mae, int RRN_filho, FncGetRRNirma retorna_irma)
     }
 }
 
-no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *no_filho, FncGetRRNirma retorna_irma){
-    int menor_C_filho = (no_filho->chaves)[0].C;//menor chave do filho
-
-    //Obter o RRN do filho.
-    int RRN_no_filho;
-    buscaBinNo(no_mae, 0, no_mae->n - 1, menor_C_filho, &RRN_no_filho);
+no_arvore_t *get_pagina_irma(FILE *arqArvore,pagina_t *pgn_mae, pagina_t *pgn_atual, FncGetRRNirma retorna_irma){   
+    //Retorna o ponteiro para a página lida caso consiga ler a página irmã.
+    //Retorna NULL caso não consiga ler a página irmã.
 
     //Obter o RRN da página irmã
     int RRN_irma = get_RRN_irma(pgn_mae->no, pgn_atual->RRN_no, retorna_irma);
@@ -388,21 +385,14 @@ no_arvore_t *get_pagina_irma(FILE *arqArvore,no_arvore_t *no_mae, no_arvore_t *n
     pagina_irma->RRN_no = RRN_irma;//configuro o RRN
     no_arvore_t *no_irma = alocar_no();//aloco o nó
 
-    fseek(arqArvore, RRN_irma+1, SEEK_SET);//posiciono o cursor para leitura do nó
-    fluxo_no(arqArvore, pagina_irma->no, fread);//leio o nó
+    fseek(arqArvore, (RRN_irma+1) * TAM_PAGINA, SEEK_SET);//posiciono o cursor para leitura do nó
+    fluxo_no(arqArvore, pagina_irma->no, meu_fread);//leio o nó
 
     return pagina_irma;//retorno o nó   
 }
 
-int get_pos_chave_mae(pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t *pgn_irma){
-    int pos_RRNatual_vet_pont = busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_atual->RRN_no), compara_ponteiros);
-    int pos_RRNirma_vet_pont = busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_irma->RRN_no), compara_ponteiros);
-
-    if(pos_RRNatual_vet_pont > pos_RRNirma_vet_pont){
-        return pos_RRNirma_vet_pont;
-    }else{
-        return pos_RRNatual_vet_pont;
-    }
+int get_pos_chave_mae(pagina_t *pgn_mae, pagina_t *pgn_esq){
+    return busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_esq->RRN_no), compara_ponteiros);
 }
 
 void insere_ordenado_pontPromovido(no_arvore_t *no_esq, no_arvore_t *no_dir, int ponteiro_promovido, int pos){
@@ -423,7 +413,7 @@ void insere_ordenado_pontPromovido(no_arvore_t *no_esq, no_arvore_t *no_dir, int
     
 }
 
-void insere_no_temp(temp_no_t *temp, no_arvore_t *no_esq, no_arvore_t *no_dir, InfoPromovida_t *info, chave_t *chave_mae){
+void insere_no_temp(temp_no_t *temp, no_arvore_t *no_esq, no_arvore_t *no_dir, InfoInserida_t *info, chave_t *chave_mae){
 
     //--Inserir chaves--
 
@@ -441,85 +431,82 @@ void insere_no_temp(temp_no_t *temp, no_arvore_t *no_esq, no_arvore_t *no_dir, I
     insere_ordenado_vet_chaves(temp->chaves, chave_mae, temp->n - 1);
 
     //a chave promovida
-    int pos_chave_promovida = insere_ordenado_vet_chaves(temp->chaves, info->chave_promovida, temp->n);
+    int pos_chave_promovida = insere_ordenado_vet_chaves(temp->chaves, info->chave_inserida, temp->n);
 
     //--Inserir ponteiros--
 
     //os ponteiros do nó da esquerda
-    for(int i = 0; i < )
 }
 
-void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir, InfoPromovida_t *info){
+void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir, InfoInserida_t *info){
 
-    int tam_no_temp = pgn_esq->no->n + pgn_dir->no->n + 2;
+    int tam_no_temp = pgn_esq->no->n + pgn_dir->no->n + 2;//Tamanho do nó temporário
     temp_no_t *temp_no = aloca_temp_no(tam_no_temp);
 
+    //Obtenho a posição da chave mãe.
+    int pos_chave_mae = get_pos_chave_mae(pgn_mae, pgn_esq);
+
     //Coloco as informações no nó temporário.
-    insere_no_temp();
-
-    //Adiciono, no vetor temporário, as chaves da irmã.
-    insere_chaves_no_vet_chaves(pgn_irma->no, vet_chaves_aux, tam_vet_chaves_aux);
-
-    //Adiciono, no vetor temporário, a chave da mãe.
-    //para isso, devo descobrir qual chave da mãe devo adicionar no vetor de chaves
-    int pos_chave_mae = get_pos_chave_mae(pgn_mae, pgn_atual, pgn_irma);
-    insere_ordenado_vet_chaves(vet_chaves_aux, &(pgn_mae->no->chaves[pos_chave_mae]),tam_vet_chaves_aux);
-
-    //Adiciono, no vetor temporário, as chaves da página atual 
-    insere_chaves_no_vet_chaves(pgn_atual->no, vet_chaves_aux, tam_vet_chaves_aux);
-
-    //Adiciono, no vetor temporário, a chave que foi inserida e obtenho a posição em que tal chave foi inserida
-    int pos_chave_inserida = insere_ordenado_vet_chaves(vet_chaves_aux, info->chave_promovida, tam_vet_chaves_aux);
+    insere_no_temp(temp_no, pgn_esq->no, pgn_dir->no, info, &(pgn_mae->no->chaves[pos_chave_mae]));
 
     //Agora devo inserir as chaves do vetor temporáio nas páginas de modo a distribui-las corretamente. Para isso:
     //-devo inserir a chave do meio na página mãe
-    int meio = tam_vet_chaves_aux/2;
-    insere_chave_em_vet_chaves(pgn_mae, &(vet_chaves_aux[meio]), pos_chave_mae);
-    //-devo inserir as demais chaves
-    if(compara_chaves(&(pgn_atual->no->chaves[0]), &(pgn_mae->no->chaves[pos_chave_mae]))>0){//Se a menor chave atual for maior a chave mãe
-        //Então a página irmã é a da esquerda, logo devo inserir os menores valores nela
-        insere_ordenado_pontPromovido(pgn_irma->no, pgn_atual->no, info->ponteiro_promovido, pos_chave_inserida);
-        temp_vetPont_para_nos(vet_ponts_aux, tam_vet_ponts_aux, pos_chave_inserida, pgn_irma->no, pgn_atual->no);
-        copia_vet_chaves(vet_chaves_aux, pgn_irma->no->chaves, 0, meio-1, 0, meio-1);
-        //e insiro os demais na página atual
-        copia_vet_chaves(vet_chaves_aux, pgn_atual->no->chaves, meio+1, tam_vet_chaves_aux-1, 0, tam_vet_chaves_aux - meio - 2);
-    }else{
-        //Então a página irmã é a da direita, logo devo inserir os maiores nela
-        insere_ordenado_pontPromovido(pgn_atual->no, pgn_irma->no, info->ponteiro_promovido, pos_chave_inserida);
-        temp_vetPont_para_nos(vet_ponts_aux, tam_vet_ponts_aux, pos_chave_inserida, pgn_atual->no, pgn_irma->no);
-        copia_vet_chaves(vet_chaves_aux, pgn_irma->no->chaves, meio+1, tam_vet_chaves_aux-1, 0, tam_vet_chaves_aux - meio - 2);
-        //e insiro os demais na página atual
-        copia_vet_chaves(vet_chaves_aux, pgn_atual->no->chaves, 0, meio-1, 0, meio-1);
-    }
+    int meio = tam_no_temp/2;
+
+    //troco a chave da mae
+    pgn_mae->no->chaves[pos_chave_mae] = temp_no->chaves[meio];
+
+    //copiando os valores menores que o valor da mãe para a pagina da esquerda 
+    copia_vet_chaves(temp_no->chaves, pgn_esq->no->chaves, 0, meio-1, 0, meio-1);
+
+    //copiando os valores maiores que a mae para a pagina da direita
+    copia_vet_chaves(temp_no->chaves, pgn_dir->no->chaves, meio+1, tam_no_temp-1, 0, tam_no_temp-meio-2);
 
     //Escrever os nós que foram modificados
     fseek(arqArvore, (pgn_mae->RRN_no+1)*TAM_PAGINA, SEEK_SET);
     fluxo_no(arqArvore, pgn_mae->no, fwrite);
-    fseek(arqArvore, (pgn_irma->RRN_no+1)*TAM_PAGINA, SEEK_SET);
-    fluxo_no(arqArvore, pgn_irma->no, fwrite);
-    fseek(arqArvore, (pgn_atual->RRN_no+1)*TAM_PAGINA, SEEK_SET);
-    fluxo_no(arqArvore, pgn_atual->no, fwrite);
+    fseek(arqArvore, (pgn_esq->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_esq->no, fwrite);
+    fseek(arqArvore, (pgn_dir->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_dir->no, fwrite);
 }
 
-int redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, InfoPromovida_t *info){
+result_redistribuicao_t escolheIrma(pagina_t *pgn_irma, pagina_t *pgn_irma_esq, pagina_t *pgn_irma_dir){
+    if(pgn_irma_dir != NULL){
+        pgn_irma = pgn_irma_dir;
+        return retorna_dir;
+    }else{
+        pgn_irma = pgn_irma_esq;
+        return retorna_esq;
+    }
+}
+
+result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t *pgn_irma, InfoInserida_t *info){
+
     //Primeiramente, encontrar a página irmã à esquerda.
-    pagina_t *pgn_irma = get_pagina_irma(arqArvore,pgn_mae, pgn_atual, retorna_irma_esq);
-    if(pgn_irma != NULL && (pgn_irma->no->n < M-1)){//Se consegui obter a página irmã à esquerda e ela não está cheia
+    pagina_t *pgn_irma_esq = get_pagina_irma(arqArvore,pgn_mae, pgn_atual, retorna_irma_esq);
+    if(pgn_irma_esq != NULL && (pgn_irma_esq->no->n < M-1)){//Se consegui obter a página irmã à esquerda e ela não está cheia
         //então faço a redistribuição com ela.
-        redistribui_paginas(arqArvore, pgn_mae, pgn_irma, pgn_atual, info);
-        return 1;//retorno o valor '1' que significa positivo.
-    }
+        redistribui_paginas(arqArvore, pgn_mae, pgn_irma_esq, pgn_atual, info);
 
-    //Tento encontrar a página irmã à direita.
-    no_arvore_t *pgn_irma = get_pagina_irma(arqArvore, pgn_mae, pgn_atual, retorna_irma_dir);
-    if(pgn_irma != NULL && (pgn_irma->no->n < M-1)){//Se consegui obter a página irmã à direita e ela não está cheia
+        //retorno que a redistribuição foi concluída.
+        return redistribuiu;
+    }
+    
+    //Depois, tento com a página da direita    
+    pagina_t *pgn_irma_dir = get_pagina_irma(arqArvore,pgn_mae, pgn_atual, retorna_irma_dir);
+    if(pgn_irma_dir != NULL && (pgn_irma_dir->no->n < M-1)){//Se consegui obter a página irmã à direita e ela não está cheia
         //então faço a redistribuição com ela.
-        redistribui_paginas(arqArvore, pgn_mae, pgn_atual, pgn_irma, info);
-        return 1;//retorno o valor '1' que significa positivo.
-    }
+        redistribui_paginas(arqArvore, pgn_mae, pgn_atual, pgn_irma_dir, info);
 
-    //Se não retornei nos casos acima, é porque não consegui redistribuir com nenhuma página irmã.
-    return -1;//Logo, devo retornar que não consegui redistribuir
+        //retorno que a redistribuição foi concluída.
+        return redistribuiu;
+    }
+    
+    /*Dado que não foi feita a redistribuição, sabe-se que deve ser feito o split 2 para 3.  
+    Então, devo escolher uma das irmãs para que o split ocorra*/
+
+    return escolheIrma(pgn_irma, pgn_irma_esq, pgn_irma_dir);
 }
 
 void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_atual, chave_t *chave_inserir, int *ponteiro_promovido){

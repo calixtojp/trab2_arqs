@@ -108,7 +108,7 @@ void where(void){
         mensagem_erro();
     }
 
-    /*Declaro a struct com todas as ações necessárias para esse funcionalidade. 
+    /*Declaro a struct com todas as ações necessárias para essa funcionalidade. 
     Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
 
     FncAcoes *acoes = alocar_acoes();
