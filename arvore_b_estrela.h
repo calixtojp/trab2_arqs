@@ -33,6 +33,8 @@
     void desalocar_no(no_arvore_t *no);
     chave_t *alocar_chave();
     void desalocar_chave(chave_t *chave);
+    pagina_t *aloca_pagina(void);
+    void desaloca_pagina(pagina_t *pagina);
 
     //Funções get/set
     int get_ordem_arvore(void);

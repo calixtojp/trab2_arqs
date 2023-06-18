@@ -270,7 +270,6 @@ long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int
     }
 
     int meio = (ini+fim)/2;
-    // printf("ini:%d|mei:%d|fim:%d\n", ini, meio, fim);
 
     if((no_atual->chaves[meio]).C == chave){
         //Se achei:
@@ -284,7 +283,6 @@ long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int
         fim = meio-1;
         //-Atribuo, ao ponteiro P, o ponteiro à esquerda do valor atual 
         *P = no_atual->P[meio];
-        // printf("*P esquerda:%d\n", *P);
         //-Chamo a função recursivamente com os valores atualizados
         return buscaBinNo(no_atual, ini, fim, chave, P);
     }else{
@@ -293,7 +291,6 @@ long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int
         ini = meio+1;
         //-Atribuo, ao ponteiro P, o ponteiro à direita do valor atual 
         *P = no_atual->P[meio+1];
-        // printf("*P direita:%d\n", *P);
         //-Chamo a função recursivamente com os valores atualizados
         return buscaBinNo(no_atual, ini, fim, chave, P);
     }
