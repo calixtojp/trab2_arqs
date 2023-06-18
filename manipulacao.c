@@ -59,7 +59,7 @@ void desalocar_acoes(FncAcoes *acoes){
 }
 
 void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arv, FncAcaoRegSeq reg_seq, FncAcaoBranch no, FncAcaoFinal final){
-    acoes->reg_arv = reg_arv;
+    acoes->reg_arvore = reg_arv;
     acoes->reg_seq = reg_seq;
     acoes->no = no;
     acoes->final = final;
@@ -144,6 +144,14 @@ int get_nroRegValidos(ArqDados_t *arq_dados){
     return resultado;
 }
 
+int arvore_vazia(Arvore_t *arvore){//Função que verifica se a árvore está vazia
+    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 void levaFinalCursorDados(ArqDados_t *arq_dados){
     fseek(arq_dados->arqDados, 0, SEEK_END);
 }
@@ -183,12 +191,33 @@ InfoDados_t *ler_criterios_busca(){
     return criterios;
 }
 
+InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados){
+    InfoDados_t *info = alocar_InfoDados(6);
+    dados_t *reg = alocar_dados();
+    metodoLeitura(reg, arq_dados->arqDados);
+    printf("reg lido:\n");
+    mostrar_campos(reg);
+
+    regDados_para_vetores(reg, info->nomes, info->vals_int, info->vals_str);
+
+    desalocar_registro(reg);
+
+    return info;
+}
+
+void mostrar_info_dados(InfoDados_t *criterios){
+    for(int i=0; i<criterios->qtd_crit; ++i){
+        printf("%s: str:%s | int:%d\n", criterios->nomes[i], criterios->vals_str[i], criterios->vals_int[i]);
+    }
+}
+
 void desalocar_InfoDados(InfoDados_t *informacao){
     desalocar_vetor_string(informacao->nomes,informacao->qtd_crit);
     desalocar_vetor_string(informacao->vals_str,informacao->qtd_crit);
     free(informacao->vals_int);
     free(informacao);
 }
+
 int testarStatusArvore(Arvore_t *arvore){
 
 	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
@@ -233,15 +262,15 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
         //Nó inexistente, ou seja, não há registro com o idCrime buscado
 
         //chamo a ação com um byteOffset nulo
-        acoes->reg_arv(arq_dados, criterios, -1);
+        acoes->reg_arvore(arq_dados, criterios, -1);
         return;
     }
 
     //Leio a página que quero verificar
-    fseek(arvore->arqArvore, (RRN_atual+1) * arvore->tam_pagina, SEEK_SET);
-    pagina_t *pgn_atual = aloca_pagina();
-    pgn_atual->RRN_no = RRN_atual;
-    fluxo_no(arvore->arqArvore, pgn_atual->no, meu_fread);
+    pagina_t *pgn_atual = aloca_pagina();//crio a página
+    pgn_atual->RRN_no = RRN_atual;//configuro seu RRN
+    fseek(arvore->arqArvore, (RRN_atual+1) * arvore->tam_pagina, SEEK_SET);//movo o cursor para ler
+    fluxo_no(arvore->arqArvore, pgn_atual->no, meu_fread);//realizo a leitura
 
     /*Defino P como sendo o ponteiro para o próximo nó (na próxima
     chamada recursiva dessa função, ele será o 'RRN_atual').
@@ -259,13 +288,14 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
         //se não encontrou o valor buscado no nó lido, 
         //chamo a função recursivamente para o próximo nó (valor armazenado em P)
         buscaArvoreRec(arq_dados, arvore, criterios, acoes, info_aux, chave_busca, pgn_atual, P);
-        insercao(arvore, pgn_mae, pgn_atual, info_aux);
+        // insercao(arvore, pgn_mae, pgn_atual, info_aux);
+        acoes->no(arvore, pgn_mae, pgn_atual, info_aux);
     }else{
         //Se encontrou, retorno o byteOffset
-        acoes->reg_arv(arq_dados, criterios, Pr);
+        acoes->reg_arvore(arq_dados, criterios, Pr);
     }
 
-    desalocar_pagina(pgn_atual);
+    desaloca_pagina(pgn_atual);
 }
 
 void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcoes *acoes, void *info_aux){
@@ -333,10 +363,33 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
     }
 }
 
-void insercao(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux){
+void insercao_arqDados(ArqDados_t *arq_dados, InfoDados_t *info_inserir){
+    
+    //Insiro o registro no arquivo de dados. Para isso:
+    dados_t *reg_inserir = alocar_dados();//1-Devo criar o registro que irei inserir, a partir dos critérios de busca.
+    //2- Passo o dados de info_inserir para o registro
+    vetores_para_regDados(reg_inserir, info_inserir->nomes, info_inserir->vals_str, info_inserir->vals_int, info_inserir->qtd_crit);
+    printf("Registro que irei inserir no arquivo de dados:\n");
+    mostrar_campos(reg_inserir);
 
+    prepara_para_escrita(reg_inserir);//3-Preparar o registro para escrita
+    escrever_bin_registro_dados(reg_inserir,arq_dados->arqDados,arq_dados->cabecalhoDados);//4-Escrever o registro
+    cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);//5-incremento o nroRegArq
+
+    desalocar_registro(reg_inserir);
+}
+
+/*---------------------------------------AÇÕES-------------------------------------------*/
+void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux){
+
+    //Nessa ação, a info_aux será a informação inserida. Logo, devo fazer o casting.
     InfoInserida_t *info_inserir = (InfoInserida_t *) info_aux;
 
+    if(info_inserir->info_valida != 1){//Se não é uma informação de inserção válida, só dou return.
+        return;
+    }
+
+    //Insiro o registro no arquivo árvore.
     if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
         printf("arvore vazia\n");
         set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
@@ -346,33 +399,45 @@ void insercao(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *in
         set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));//o qual possui o nível mais alto
         set_nChaves(no_raiz, 0);//e inicialmente não possui nenhuma chave.
 
-        insere_ordenado_no(info_inserir, no_raiz);//escrevo as informações do nó
+        insere_ordenado_no(no_raiz, info_inserir->chave_inserida);//escrevo as informações do nó
 
         fluxo_no(arvore->arqArvore, no_raiz, meu_fwrite);//escrevo o nó em memória secundária
     }else{//Se a árvore não é vazia
         printf("arvore não está vazia\n");
-        if(get_nChaves(pgn_atual) < get_ordem_arvore()-1){//Se a nova chave cabe na página atual
+        if(get_nChaves(pgn_atual->no) < get_ordem_arvore()-1){//Se a nova chave cabe na página atual
             printf("cabe no nó atual\n");
-            insere_ordenado_no(pgn_atual, info_inserir);
+            insere_ordenado_no(pgn_atual->no, info_inserir->chave_inserida);
+            
+            //Já que consegui inserir ordenado no nó, garanto que não há promoção de chaves para os nós acima.
+            //Então devo indicar para os nós acima que a informação de inserção é inválida, pois já foi inserida nesse nó.
+            info_inserir->info_valida = -1;//
         }else{//Se a nova chave não cabe na página atual
             printf("não cabe no nó atual\n");
-            if(get_nivel_no(pgn_atual) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
+            if(get_nivel_no(pgn_atual->no) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
                 //Faço o split_1_para_2
                 split_1_para_2(arvore->arqArvore,arvore->cabecalhoArvore,pgn_atual,info_inserir);
             }else{//Se estou inserindo em qualquer nó que não no raiz
                 //tento a redistribuição
-                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, pgn_mae, pgn_atual, info_inserir);
-                if(!conseguiu_redistribuir){//Se não conseguiu redistribuir,
-                    //Faço o split_2_para_3
-                    split_2_para_3(arvore->arqArvore,arvore->cabecalhoArvore,pgn_mae,pgn_esq,pgn_dir,info_inserir);
+                pagina_t *pgn_irma;
+                result_redistribuicao_t resultado = redistribuicao(arvore->arqArvore, pgn_mae, pgn_atual, pgn_irma,info_inserir);
+
+                if(resultado == redistribuiu){//Se conseguiu redistribuir
+                    //Então devo indicar para os nós acima que a informação de inserção é inválida, pois já foi inserida nesse nó.
+                    info_inserir->info_valida = -1;
+                }else{//Se não conseguiu redistribuir:
+                    if(resultado == retorna_esq){//Ou seja, o ponteiro pgn_irma aponta para página irmã à esquerda
+                        split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_mae, pgn_irma, pgn_atual, info_inserir);
+                    }else{//Ou seja (resultado == retorna_dir), o ponteiro pgn_irma aponta para página irmã à direita
+                        split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_mae, pgn_atual, pgn_irma, info_inserir);
+                    }
                 }
 
+                desaloca_pagina(pgn_irma);
             }
         }
     }
 }
 
-/*---------------------------------------AÇÕES-------------------------------------------*/
 void achouReg(int flag){
     /*Funcao do tipo FncAcaoFinal que, após testar todos os registros do arquivo de dados, 
     informa que não existe registro que satisfaz os critérios de busca, caso isso seja verdade*/
@@ -415,11 +480,11 @@ void printa_busca(dados_t *registro){
     mostrar_campos(registro);
 }
 
-void NoOpAcaoNo(int ignorar){
+void NoOpAcaoBranch(Arvore_t *ignorar1, pagina_t *ignorar2, pagina_t *ignorar3, void *ignorar4){
     //função do tipo FncAcaoNo que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
-void NoOpAcaoFinal(void){
+void NoOpAcaoFinal(int){
     //função do tipo FncAcaoFinal que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
@@ -427,13 +492,24 @@ void NoOpAcaoRegArv(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignora
     //função do tipo FncAcaoRegArv que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
-void NoOpAcaoRegSeq(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignorar3){
+void NoOpAcaoRegSeq(dados_t *ignorar1){
     //função do tipo FncAcaoRegSeq que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
-void insere_reg(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
-    printf("vou inserir o registro:\n");
-    mostrar_campos(registro);
+/*---------------------------------------DEMAIS FUNÇÕEs-------------------------------------------*/
+
+InfoInserida_t *criar_InfoInserida(InfoDados_t *info_dados){
+    InfoInserida_t *inserida_retorno = alocar_InfoInserida();
+    inserida_retorno->info_valida = 1;//Configuro como uma informação válida
+    for(int i = 0; i < info_dados->qtd_crit; ++i){//Laço que acha o idCrime e escreve-o na chave_t.
+        if(strcmp(info_dados->nomes[i], "idCrime")==0){
+            set_chaves_C(inserida_retorno->chave_inserida, info_dados->vals_int[i]);
+            set_chaves_Pr(inserida_retorno->chave_inserida, -1);
+            break;
+        }
+    }
+
+    return inserida_retorno;
 }
 
 void reiniciarCursorDados(ArqDados_t *arq_dados){

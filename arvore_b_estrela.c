@@ -34,6 +34,27 @@ typedef struct temp_no{
     int *ponteiros;
 }temp_no_t;
 
+InfoInserida_t *alocar_InfoInserida(void){
+    InfoInserida_t *info_retorno = malloc(sizeof(InfoInserida_t));
+    info_retorno->chave_inserida = alocar_chave();
+    info_retorno->ponteiro_inserido = malloc(sizeof(int));
+
+    return info_retorno;
+}
+
+void desalocar_InfoInserida(InfoInserida_t *info){
+    free(info->ponteiro_inserido);
+    free(info->chave_inserida);
+    free(info);
+}
+
+void set_InfoInserida(InfoInserida_t *info, int C, int Pr, int info_valida, int ponteiro_inserido){
+    info->chave_inserida->C = C;
+    info->chave_inserida->Pr = Pr;
+    info->info_valida = info_valida;
+    *(info->ponteiro_inserido) = ponteiro_inserido;
+}
+
 cabecalho_arvore_t *alocar_cabecalho_arvore(void){
     cabecalho_arvore_t *cabecalho_retorno = malloc(sizeof(cabecalho_arvore_t));
     return cabecalho_retorno;
@@ -304,6 +325,14 @@ void set_nivel_no(no_arvore_t *no, int nivel){
     no->nivel = nivel;
 }
 
+void set_chaves_C(chave_t *chave, int C){
+    chave->C = C;
+}
+
+void set_chaves_Pr(chave_t *chave, int Pr){
+    chave->Pr = Pr;
+}
+
 int compara_ponteiros(void *vet_ponteiros, int pos_comparar, void *chave_comparar){
     int *vet_ponteiros_real = (int*)vet_ponteiros;
     int chave_pos = vet_ponteiros_real[pos_comparar];
@@ -393,6 +422,7 @@ int insere_ordenado_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int 
 void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir){
     //Insere uma chave (em um nó) em sua posição ideal, de modo a manter a ordem. 
     insere_ordenado_vet_chaves(no_inserir->chaves, chave_inserir, no_inserir->n);
+    no_inserir->n++;
 }
 
 int retorna_irma_esq(int pos_vet_P, no_arvore_t *no){
@@ -705,7 +735,7 @@ void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pg
     fseek(arqArvore, (pgn_dir->RRN_no+1)*TAM_PAGINA, SEEK_SET);
     fluxo_no(arqArvore, pgn_dir->no, meu_fwrite);
     fseek(arqArvore, (pgn_nova->RRN_no)*TAM_PAGINA, SEEK_SET);//Escrevo a nova página no 
-    fluxo_no(arqArvore, pgn_nova, meu_fwrite);
+    fluxo_no(arqArvore, pgn_nova->no, meu_fwrite);
 
     //Por fim, devo fazer com que a próxima chave a ser inserida seja a chave promovida à direita
     info->info_valida = 1;

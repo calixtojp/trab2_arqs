@@ -134,17 +134,13 @@ void desalocar_vetor_string(char **vetor, int n_elem){
     free(vetor);
 }
 
-int ehInteiro(char *campo){
-    //funcao que identifica se um campo eh do tipo inteiro ou nao
-    if((strcmp(campo,"idCrime") == 0) || (strcmp(campo,"numeroArtigo") == 0)){
-        return 1;//eh inteiro
-    }else{
-        return 0;//nao eh inteiro
-    }
-}
+
 
 void copia_n_chars(char *str1, char *str2, int n){
     for(int i=0; i<n; i++){
+        if(str1[i] == '\0'){//Se cheguei no '\0' interrompo a cópia dos demais chars
+            break;
+        }
         str1[i] = str2[i];
     }
 }

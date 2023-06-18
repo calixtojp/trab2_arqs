@@ -6,6 +6,7 @@
 
 #define TAM_MAX_BUFFER_INT 10
 #define TAM_CABECALHO_DADOS 17
+#define TAM_CAMPOS_FIXOS 32
 struct Cabecalho{
 	char status;
 	long int proxByteOffset;
@@ -144,6 +145,15 @@ int campoNulo_str(void *campo_str){
 		}
 	}
 	return 1;
+}
+
+int ehInteiro(char *campo){
+    //funcao que identifica se um campo eh do tipo inteiro ou nao
+    if((strcmp(campo,"idCrime") == 0) || (strcmp(campo,"numeroArtigo") == 0)){
+        return 1;//eh inteiro
+    }else{
+        return 0;//nao eh inteiro
+    }
 }
 
 int bytesAteCampoIndexado(dados_t *reg, char *campo){
@@ -405,7 +415,7 @@ void escrever_bin_registro_dados(dados_t *dados, FILE *arq, cabecalho_t *cabecal
 	fwrite(&dados->hashtag,sizeof(char),1,arq);
 
 	//soma o numero de bytes total dos campos de tamanho fixo
-	cabecalho->proxByteOffset += 32;
+	cabecalho->proxByteOffset += TAM_CAMPOS_FIXOS;
 }
 
 void escrever_bin_campo_variavel(char *texto, FILE *arq, cabecalho_t *cabecalho){
@@ -486,6 +496,7 @@ void copia_registro(dados_t *destino, dados_t *origem){
 }
 
 int ler_bin_registro(dados_t *registro, FILE *arq_bin){
+
 	int chegou_fim = feof(arq_bin);
 
 	if(fread(&(registro->removido), sizeof(char), 1, arq_bin)!=1){
@@ -692,7 +703,7 @@ void mostrar_campos(dados_t *registro){
 void mostrar_campo_fixo(char *cursor, int tam_palavra){
 	int letras_validas = 0;//indica a quantidade de letras válidas de uma palavra
 
-	while((cursor[letras_validas] != '$') && (letras_validas < tam_palavra)){
+	while((cursor[letras_validas] != '\0') && (letras_validas < tam_palavra)){
 		printf("%c", cursor[letras_validas]);
 		letras_validas++;
 	}
@@ -739,11 +750,16 @@ cabecalho_t *ler_dados_cabecalho(FILE *arq_bin){
 	return cabecalho_retorno;
 }
 
-void leRegStdin(dados_t *reg){
+int leRegStdin(dados_t *reg, FILE *ignorar){
     /*
 		Lê um buffer da entrada padrão stdin e insere o
-        os dados do registro.
+        os dados do registro. Retorna o tamanho do registro lido.
+
+		'FILE *ignorar' existe para manter a integridade do ponteiro de função.
     */
+
+
+   	int tam_final = 0;
    	const int max_tam_str = 200;
 
    	scanf("%d", &(reg)->idCrime);
@@ -759,14 +775,54 @@ void leRegStdin(dados_t *reg){
 	ler_aspas_string(reg->lugarCrime);
 	tam_real = strlen(reg->lugarCrime);
 	reg->lugarCrime = realloc(reg->lugarCrime, (sizeof(char))*(tam_real+1));
+	tam_final += tam_real;
 
 	reg->descricaoCrime = malloc(sizeof(char)*max_tam_str);
 	ler_aspas_string(reg->descricaoCrime);
 	tam_real = strlen(reg->descricaoCrime);
 	reg->descricaoCrime = realloc(reg->descricaoCrime, (sizeof(char))*(tam_real+1));
+	tam_final += tam_real;
 
 	ler_aspas_string(reg->marcaCelular);
 
+	tam_final += TAM_CAMPOS_FIXOS;
+
+	return tam_final;
+}
+
+void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **vals_str){
+	/*função que faz a conversão de um registro de dados para vetores, que são colocados
+	dentro da struct InfoDados_t */
+
+	strcpy(nomes[0],"idCrime"); //copio o nome do campo
+	strcpy(vals_str[0],"int"); //indico no vetor de valores str que seu valor é int
+	vals_int[0] = reg->idCrime; //copio o valor no vetor de int
+
+	strcpy(nomes[1],"dataCrime"); //copio o nome do campo
+	vals_int[1] = -1; //indico no vetor de valores int que seu valor é str
+	copia_n_chars(vals_str[1], reg->dataCrime, 10);  //copio o valor no vetor de str
+	(vals_str[1])[10] = '\0';
+
+	strcpy(nomes[2],"numeroArtigo"); //copio o nome do campo
+	strcpy(vals_str[2],"int"); //indico no vetor de valores str que seu valor é int
+	vals_int[2] = reg->numeroArtigo; //copio o valor no vetor de int
+	
+	strcpy(nomes[3],"lugarCrime"); //copio o nome do campo
+	vals_int[3] = -1; //indico no vetor de valores int que seu valor é str
+	strcpy(vals_str[3], reg->lugarCrime);  //copio o valor no vetor de str
+	printf("Strlen lugar = %d\n",(int)strlen(reg->lugarCrime));
+	printf("Copia = %s\n",vals_str[3]);
+	
+	strcpy(nomes[4],"descricaoCrime"); //copio o nome do campo
+	vals_int[4] = -1; //indico no vetor de valores int que seu valor é str
+	strcpy(vals_str[4], reg->descricaoCrime);  //copio o valor no vetor de str
+	printf("Strlen descricao = %d\n",(int)strlen(reg->descricaoCrime));
+	printf("Copia = %s\n",vals_str[4]);
+
+	strcpy(nomes[5],"marcaCelular"); //copio o nome do campo
+	vals_int[5] = -1; //indico no vetor de valores int que seu valor é str
+	copia_n_chars(vals_str[5], reg->marcaCelular, 12);  //copio o valor no vetor de str
+	(vals_str[5])[12] = '\0';
 }
 
 
@@ -829,7 +885,7 @@ int testarCriterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, i
 	}
 }
 
-void fazAlteracoes(dados_t *reg, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit){
+void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit){
 	char nomes[6][50] = {
 		"idCrime",
 		"dataCrime",
@@ -839,44 +895,55 @@ void fazAlteracoes(dados_t *reg, char **vet_nomes, char **vet_vals_str, int *vet
 		"descricaoCrime"
 	};
 
+	printf("Fazendo alterações\n");
+
 	int tam;
 	for(int i = 0; i < qtd_crit; ++i){
 		int novo_tam;
 		for(int j = 0; j < 6; ++j){
 			if(strcmp(nomes[j], vet_nomes[i])==0){
+				int k;
 				switch (j){
 					case 0://idCrime
+						printf("Idcrime: %d\n",vet_vals_int[i]);
 						reg->idCrime = vet_vals_int[i];
 						break;
 					case 1://dataCrime
+						printf("dataCrime: %s\n",vet_vals_str[i]);
 						tam = strlen(vet_vals_str[i]);
-						for(int k = 0; k < tam; ++k){
+						for(k = 0; k < tam; ++k){
 							reg->dataCrime[k] = vet_vals_str[i][k];
 						}
-						for(int k = tam; k < 10; ++k){
-							reg->dataCrime[k] = '$';
+						if(k < 10){
+							reg->dataCrime[k] = '\0';
 						}
+
 						break;
 					case 2://numeroArtigo
+						printf("numeroArtigo: %d\n",vet_vals_int[i]);
 						reg->numeroArtigo = vet_vals_int[i];
 						break;
 					case 3://marcaCelular
+						printf("marcaCelular: %s\n",vet_vals_str[i]);
 						tam = strlen(vet_vals_str[i]);
-						for(int k = 0; k < tam; ++k){
+						for(k = 0; k < tam; ++k){
 							reg->marcaCelular[k] = vet_vals_str[i][k];
 						}
-						for(int k = tam; k < 12; ++k){
-							reg->marcaCelular[k] = '$';
+						if(k < 12){
+							reg->marcaCelular[k] = '\0';
 						}
+
 						break;
 					case 4://lugarCrime
+						printf("lugarCrime: %s\n",vet_vals_str[i]);
 						novo_tam = strlen(vet_vals_str[i]);
-						reg->lugarCrime = realloc(reg->lugarCrime, sizeof(char)*novo_tam);
+						reg->lugarCrime = malloc(sizeof(char)*(novo_tam+1));
 						strcpy(reg->lugarCrime, vet_vals_str[i]);
 						break;
 					case 5://descricaoCrime
+						printf("descricaoCrime: %s\n",vet_vals_str[i]);
 						novo_tam = strlen(vet_vals_str[i]);
-						reg->descricaoCrime = realloc(reg->descricaoCrime, sizeof(char)*novo_tam);
+						reg->descricaoCrime = malloc(sizeof(char)*(novo_tam+1));
 						strcpy(reg->descricaoCrime, vet_vals_str[i]);
 						break;
 					default:
@@ -885,6 +952,9 @@ void fazAlteracoes(dados_t *reg, char **vet_nomes, char **vet_vals_str, int *vet
 			}
 		}
 	}
+	printf("registro final\n");
+	mostrar_campos(reg);
+
 }
 
 void escreverCampoRemovido(FILE *arqDados){

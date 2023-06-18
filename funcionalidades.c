@@ -112,7 +112,7 @@ void where(void){
     Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
 
     FncAcoes *acoes = alocar_acoes();
-    set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoNo, achouReg);
+    set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoBranch, achouReg);
     //Loop que faz n buscas
     for(int i=1; i<=n; i++){
         printf("Resposta para a busca %d\n",i);
@@ -125,7 +125,7 @@ void where(void){
         caso nenhum satisfaça os critérios de busca*/
         
         //MUDAR
-        processaRegistros(arq_dados,arvore,criterios,acoes);
+        processaRegistros(arq_dados,arvore,criterios,acoes, NULL);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
@@ -178,65 +178,85 @@ void insert_into(){
     alterarStatusArvore(arvore, 0);
     escreverStatusArvore(arvore);
 
-
     //Como vou escrever os dados no final, devo levar o cursor para o final
     levaFinalCursorDados(arq_dados);
 
     int qtdInserir;
     scanf(" %d", &qtdInserir);
 
-    // //Requisito a função que irá ler da entrada padrão e,
-    // //posteriormente, inserir os dados nos arquivos.
-    // inserirRegStdin(arq_dados, arq_index, qtdInserir);
+    FncAcoes *acoes = alocar_acoes();
+    set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
 
-    //Loop que faz as inserções
-    for(int i=1; i<=qtdInserir; i++){
+    InfoDados_t *dado_inserir_arqDados;
+    InfoInserida_t *dado_inserir_arvore;
+    
+    if(arvore_vazia(arvore)){
+        //Se a árvore está vazia, então a busca executada pelo processaRegistros não pode ser efetuada.
+        //Desse modo, a inserção deve ser feita de maneira manual.
+        printf("Arvore vazia\n");
+        //Ler os dados que serão inseridos.
+        dado_inserir_arqDados = ler_dados_registro(leRegStdin,arq_dados);
 
-        //Ler os dados que serão inseridos
-        InfoDados_t *dados_inserir = ler_criterios_busca();
+        //mostrar_info_dados(dado_inserir_arqDados);
 
-        /*Processar o registro usando a ação 'insere_reg'
-        e como não é necessário uma ação final, a ação final é um 'no operation
-        */
+        //Inserir no arquivo de dados
+        insercao_arqDados(arq_dados, dado_inserir_arqDados);
 
+        //Inserir na árvore
+        dado_inserir_arvore = criar_InfoInserida(dado_inserir_arqDados);
+        insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
+        desalocar_InfoDados(dado_inserir_arqDados);
+        desalocar_InfoInserida(dado_inserir_arvore);
 
-        //MUDAR
-        //processaRegistros(arq_dados,arvore,dados_inserir,insere_reg,noop);
-
-        //Desalocar crtérios de busca    	
-        desalocar_InfoDados(dados_inserir);
+        /*Reduzo em 1 a quantidade que deve ser inserida, 
+        para que o loop de inserções não execute uma vez a mais*/
+        qtdInserir--;
     }
 
-    // //Após inserir os dados, obtenho a quantidade atual de registros
-    // int qtdRegIndex = get_nroRegIndex(arq_index);
-    // ordenaVetIndex(arq_index, qtdRegIndex);
+    //Loop que faz as inserções usando a busca do processaRegistros
+    for(int i=1; i<=qtdInserir; i++){
+        printf("Arvore com coisa\n");
+        //Ler os dados que serão inseridos.
+        dado_inserir_arqDados = ler_dados_registro(leRegStdin,arq_dados);
+        
+        //mostrar_info_dados(dado_inserir_arqDados);
 
-    // //Agora devo reescrever todo o arquivo de índice. Para isso:
-    // //Fecho o arquivo e abro com modo 'wb', para reescrevê-lo por completo
-    // fechar_arq_index(arq_index);
-    // abrir_arq_index(arq_index, "wb");
-    // alterarStatusIndex(arq_index,0);
-    // escreveArqIndex(arq_index);
+        //Inserir no arquivo de dados
+        insercao_arqDados(arq_dados, dado_inserir_arqDados);
+        printf("Inseriu dados\n");
 
-    // //Agora, indico que os arquivos estão consistentes, pois já usei ambos
-    // reiniciarCursorIndex(arq_index);
-    // alterarStatusIndex(arq_index,1);
-    // escreverStatusIndex(arq_index);
+        //Inserir na árvore
+        dado_inserir_arvore = criar_InfoInserida(dado_inserir_arqDados);
+        printf("Criei info inserir\n");
+        processaRegistros(arq_dados, arvore, dado_inserir_arqDados, acoes, dado_inserir_arvore);
+        printf("Processei\n");
+
+        //Desalocar crtérios de busca
+        desalocar_InfoDados(dado_inserir_arqDados);
+        desalocar_InfoInserida(dado_inserir_arvore);
+    }
+
+    desalocar_acoes(acoes);
 
     //Reescrevo o cabeçalho do arquivo de dados, pois, além do status, alterei o campo de registros totais
     reiniciarCursorDados(arq_dados);
     alterarStatusDados(arq_dados,1);
     escreverCabecalhoDados(arq_dados);
 
+    //Fazer o mesmo procedimento de reescrita com o cabeçalho da árvore
+    reiniciarCursorArvore(arvore);
+    alterarStatusArvore(arvore,1);
+    escreverCabecalhoArvore(arvore);    
+
     //Fechar os arquivos utilizados
     fechar_arq_dados(arq_dados);
-    // fechar_arq_index(arq_index);
+    fechar_arvore(arvore);
 
     binarioNaTela(getNomeArqDados(arq_dados)); 
-    // binarioNaTela(getNomeArqIndex(arq_index));
+    binarioNaTela(getNomeArvore(arvore));
 
     //Desalocar os tipos utilizados
     desalocar_ArqDados(arq_dados);
-    // desalocar_ArqIndex(arq_index); 
+    desalocar_Arvore(arvore); 
 }

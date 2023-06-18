@@ -28,6 +28,8 @@
     typedef size_t (*FncFluxoMemSec) (void*, size_t, size_t, FILE*);//funções de fluxo com a memória secundária (fread/fwrite)
 
     //Funções de alocar/desalocar
+    InfoInserida_t *alocar_InfoInserida(void);
+    void desalocar_InfoInserida(InfoInserida_t *info);
     cabecalho_arvore_t *alocar_cabecalho_arvore(void);
     no_arvore_t *alocar_no(void);
     void desalocar_no(no_arvore_t *no);
@@ -49,6 +51,8 @@
     void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis);
     int get_nivel_no(no_arvore_t *no);    
     void set_nivel_no(no_arvore_t *no, int nivel);
+    void set_chaves_C(chave_t *chave, int C);
+    void set_chaves_Pr(chave_t *chave, int Pr);
 
     //funções fluxo (escrita/leitura) da memória
     void fluxo_StatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo);
