@@ -13,6 +13,13 @@
 -se houver retorno de registro, tento inserir no atual
 -retorno o possível retorno de registro da inserção do atual
 
+
+split_2_para_3(pgn_mae, pgn_esq, pgn_dir, info){
+    pgn_temp = criar_pgn();
+    vet_ponts = colocar_ponts();
+    vet_chaves = colocar_chaves();
+}
+
 key insercao(RRN_anterior, RRN_inserir, key_inserir):
     if cabeNeu:
         insereNeu(key_inserir)

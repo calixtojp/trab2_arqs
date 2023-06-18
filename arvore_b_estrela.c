@@ -172,7 +172,7 @@ void setChaves(no_arvore_t *no, chave_t *chaves, int ini_chaves, int fim_chaves)
     }
 
     //Se sobrarem chaves vazias no nó, completa-se com valores nulos
-    while(i<4){
+    while(i<M-1){
         ((no->chaves)[i-ini_chaves]).C = -1;
         ((no->chaves)[i-ini_chaves]).Pr = -1;
         i++;
@@ -187,7 +187,7 @@ void setPonteiros(no_arvore_t *no, int *ponteiros, int ini_pont, int fim_pont){
     }
 
     //Se sobrarem ponteiros vazios no nó, completa-se com valores nulos
-    while(j<5){
+    while(j<M){
         (no->P)[j-ini_pont] = -1;
         j++;
     }
@@ -323,7 +323,7 @@ void insere_chave_em_vet_chaves(chave_t *vet_chaves, chave_t *chave_inserir, int
     (vet_chaves[pos_inserir]).Pr = chave_inserir->Pr;
 }
 
-void copia_vet_chaves(chave_t *origem, chave_t *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){
+void copia_vet_chaves(chave_t *origem, chave_t *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){//MUDAR
     int cont_origem = ini_origem;
     int cont_destino = ini_destino;
     while(cont_origem <= fim_origem){
@@ -332,7 +332,7 @@ void copia_vet_chaves(chave_t *origem, chave_t *destino, int ini_origem, int fim
     }    
 }
 
-void copia_vet_ponteiros(int *origem, int *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){
+void copia_vet_ponteiros(int *origem, int *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){//MUDAR
     int cont_origem = ini_origem;
     int cont_destino = ini_destino;
     while(cont_origem <= fim_origem){
@@ -512,16 +512,16 @@ void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, 
     insere_chave_em_vet_chaves(pgn_mae->no->chaves, &(chaves_vet_temp[meio]), meio);
 
     //3-Sobrescrevo as chaves da página à esquerda
-    copia_vet_chaves(chaves_vet_temp, pgn_esq->no->chaves, 0, meio-1, 0, meio-1);
+    setChaves(pgn_esq->no, chaves_vet_temp, 0, meio-1);
 
     //4-Sobrescrevo as chaves da página à direita
-    copia_vet_chaves(chaves_vet_temp, pgn_dir->no->chaves, meio+1, tam_chaves_vet_temp-1, 0, tam_chaves_vet_temp-meio-2);
+    setChaves(pgn_dir->no, chaves_vet_temp, meio+1, tam_chaves_vet_temp-1);
 
     //5-Sobrescrevo os ponteiros da página à esquerda
-    copia_vet_ponteiros(ponteiros_vet_temp, pgn_esq->no->P, 0, meio, 0, meio);
+    setPonteiros(pgn_esq->no, ponteiros_vet_temp, 0, meio);
 
     //6-Sobrescrevo os ponteiros da página à direita
-    copia_vet_ponteiros(ponteiros_vet_temp, pgn_dir->no->P, meio, tam_ponteiros_vet_temp-1, 0, tam_ponteiros_vet_temp-meio-3);  
+    setPonteiros(pgn_dir->no, ponteiros_vet_temp, meio, tam_ponteiros_vet_temp-1);
 
     //7-Modifico a informação acerca da ocupação das páginas
     pgn_esq->no->n = meio;
@@ -577,15 +577,14 @@ result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagin
     return escolheIrma(pgn_irma, pgn_irma_esq, pgn_irma_dir);
 }
 
-void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_atual, 
-                    InfoInserida_t *info){
+void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_atual, InfoInserida_t *info){
     
     //Crio vetores auxiliares que contém as chaves e ponteiros do nó atual e da info que desejo inserir
     chave_t *vet_chaves = aloca_vet_chaves(M);
     int *vet_ponteiros = aloca_vet_ponteiros(M+1);
     
-    //preenchimento do vetor de chaves
-    for(int i=0; i<4; i++){
+    //preenchimento do vetor de chaves MUDAR(da pra usar a função de copia)
+    for(int i=0; i<M-1; i++){
         insere_chave_em_vet_chaves(vet_chaves, &((pgn_atual->no->chaves)[i]), i);
     }
     int pos = insere_ordenado_vet_chaves(vet_chaves,info->chave_inserida,M);
@@ -594,7 +593,7 @@ void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pg
     //preenchimento do vetor de ponteiros
     /*o ponteiro que acompanha a chave a ser inserida deve ser inserido 
     na posição que ele ocupa no vet_chaves mais 1, ou seja, pos+1*/
-    for(int i=0; i<6; i++){
+    for(int i=0; i<M+1; i++){//MUDAR (dá pra usar a função de copia)
         if(i = pos+1){//hora de inserir o novo ponteiro
             vet_ponteiros[i] = *(info->ponteiro_inserido);
         }else{
@@ -614,6 +613,8 @@ void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pg
     setChaves(pgn_dir->no,vet_chaves,meio+1,M-1);
     setPonteiros(pgn_dir->no,vet_ponteiros,meio+1,M);
     pgn_dir->RRN_no = cabecalho->RRNproxNo;
+    pgn_dir->no->n = (M+1)/2 - 1;
+    pgn_dir->no->nivel = cabecalho->nroNiveis;
     //Como foi criado um novo nó, atualizo o RRN do próximo nó 
     cabecalho->RRNproxNo;
 
@@ -633,6 +634,8 @@ void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pg
     o RRN do nó atual e o da direita o RRN do nó à direita do atual*/
     pgn_mae->no->P[0] = pgn_atual->RRN_no; 
     pgn_mae->no->P[1] = pgn_dir->RRN_no;
+    pgn_mae->no->n = 1;
+    pgn_mae->no->nivel = cabecalho->nroNiveis++;
     //Como foi criado um novo nó, atualizo o RRN do próximo nó 
     pgn_mae->RRN_no = cabecalho->RRNproxNo;
     cabecalho->RRNproxNo;
@@ -647,6 +650,74 @@ void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pg
     //desaloco as paginas criadas
     desaloca_pagina(pgn_dir);
     desaloca_pagina(pgn_mae);
+}
+
+void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info){
+    int tam_chaves_vet_temp = (M-1)*2 + 2;//chaves da direita + esquerda + chave_inserir + chave_mae
+    int tam_ponteiros_vet_temp = tam_chaves_vet_temp + 1;//ponteiros da direita + esquerda + ponteiro_inserir
+    chave_t *chaves_vet_temp = aloca_vet_chaves(tam_chaves_vet_temp);
+    int *ponteiros_vet_temp = aloca_vet_ponteiros(tam_ponteiros_vet_temp);
+
+    //Colo os dados das chaves no vetor de chaves temporário. Para isso,
+
+    //1-Obtenho a posição da chave_mae no vetor de chaves do nó mãe
+    int pos_chave_mae = get_pos_chave_mae(pgn_mae, pgn_esq);
+
+    //2-Inserir as chaves do nó à esquerda
+    copia_vet_chaves(pgn_esq->no->chaves, chaves_vet_temp, 0, M-2, 0, M-2);
+
+    //3-Inserir a chave_mae
+    insere_chave_em_vet_chaves(chaves_vet_temp, &(pgn_mae->no->chaves[pos_chave_mae]), M-1);
+
+    //4-Inserir as chaves do nó à direita
+    copia_vet_chaves(pgn_dir->no->chaves, chaves_vet_temp, 0, M-2, M, tam_chaves_vet_temp-2); 
+
+    //5-Inserir a chave da InfoInserida e obter a posição em que foi inserida
+    int pos_inserir_ponteiro = insere_ordenado_vet_chaves(chaves_vet_temp, info->chave_inserida, tam_chaves_vet_temp);
+
+    //Agora, devo preencher os dados relativos aos ponteiros
+    copia_vet_ponteiros(pgn_esq->no->P, ponteiros_vet_temp, 0, M-1, 0, M-1);
+    copia_vet_ponteiros(pgn_dir->no->P, ponteiros_vet_temp, 0, M-1, M, tam_ponteiros_vet_temp-2);
+    insere_ponteiro_em_vet(ponteiros_vet_temp, tam_ponteiros_vet_temp, pos_inserir_ponteiro+1, *(info->ponteiro_inserido));
+
+    //Escrevo os vetores temporários nos nós, em suas devidas posições. Para isso:
+    int pos_promovido_esq = tam_ponteiros_vet_temp/3;//1-Calculo o valor da primeira chave que será promovida
+    int pos_promovido_dir = pos_promovido_esq*2 + 1;//2-Calculo o valor da segunda chave que será promovida
+    //4-Devo criar uma página que irá conter os maiores valores (chaves_vet_temp e de ponteiros_vet_temp)
+    pagina_t *pgn_nova = aloca_pagina();
+    pgn_nova->no->n = tam_ponteiros_vet_temp - pos_promovido_dir - 1;//
+    pgn_nova->no->nivel = pgn_esq->no->nivel;
+    pgn_nova->RRN_no = cabecalho->RRNproxNo;
+    (cabecalho->RRNproxNo)++;
+
+    //5-Escrever as chaves:
+    setChaves(pgn_esq->no, chaves_vet_temp, 0, pos_promovido_esq-1);//5.1-Coloco as menores chaves no nó da esquerda
+    setChaves(pgn_dir->no, chaves_vet_temp, pos_promovido_esq+1, pos_promovido_dir-1);//5.2-Coloco as chaves intermediárias no nó da direita
+    setChaves(pgn_nova->no, chaves_vet_temp, pos_promovido_dir+1, tam_chaves_vet_temp-1);//5.3-Coloco as maiores chaves no nó criado
+    insere_chave_em_vet_chaves(pgn_mae->no->chaves, &(chaves_vet_temp[pos_promovido_dir]), pos_chave_mae);//5.4-Coloco a primeira chave promovida, no nó mãe
+    //6-Escrever os ponteiros:
+    setPonteiros(pgn_esq->no, ponteiros_vet_temp, 0, pos_promovido_esq);//6.1-Coloco os menores ponteiros no nó da esquerda
+    setPonteiros(pgn_esq->no, ponteiros_vet_temp, pos_promovido_esq+1, pos_promovido_dir);//6.2-Coloco os ponteiros intermediárias no nó da direita
+    setPonteiros(pgn_nova->no, ponteiros_vet_temp, pos_promovido_dir+1, tam_ponteiros_vet_temp-1);//6.3-Coloco os maiores ponteiros no nó criado
+
+    //Escrever os nós que foram modificados
+    fseek(arqArvore, (pgn_mae->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_mae->no, meu_fwrite);
+    fseek(arqArvore, (pgn_esq->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_esq->no, meu_fwrite);
+    fseek(arqArvore, (pgn_dir->RRN_no+1)*TAM_PAGINA, SEEK_SET);
+    fluxo_no(arqArvore, pgn_dir->no, meu_fwrite);
+    fseek(arqArvore, (pgn_nova->RRN_no)*TAM_PAGINA, SEEK_SET);//Escrevo a nova página no 
+    fluxo_no(arqArvore, pgn_nova, meu_fwrite);
+
+    //Por fim, devo fazer com que a próxima chave a ser inserida seja a chave promovida à direita
+    info->info_valida = 1;
+    *(info->chave_inserida) = chaves_vet_temp[pos_promovido_dir];
+    *(info->ponteiro_inserido) = pgn_nova->RRN_no;
+
+    desaloca_pagina(pgn_nova);
+    desaloca_vet_chaves(chaves_vet_temp);
+    desaloca_vet_ponteiros(ponteiros_vet_temp);
 }
 
     /*
