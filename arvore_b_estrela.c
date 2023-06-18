@@ -329,11 +329,13 @@ void copia_vet_chaves(chave_t *origem, chave_t *destino, int ini_origem, int fim
     }    
 }
 
-void temp_vetPont_para_nos(int *origem, int tam_origem, int pos_pontPromovido, no_arvore_t *no_esq, no_arvore_t *no_dir){
-    //Passo todos os ponteiros do nó da esquerda.
-    for(int i = 0; i < no_esq->n + 1; ++i){
-
-    }
+void copia_vet_ponteiros(int *origem, int *destino, int ini_origem, int fim_origem, int ini_destino, int fim_destino){
+    int cont_origem = ini_origem;
+    int cont_destino = ini_destino;
+    while(cont_origem <= fim_origem){
+        destino[cont_destino] = origem[cont_origem];
+        ++cont_destino;++cont_origem;
+    }    
 }
 
 
@@ -440,72 +442,87 @@ int get_pos_chave_mae(pagina_t *pgn_mae, pagina_t *pgn_esq){
     return busca_bin_rec(pgn_mae->no->P, 0, pgn_mae->no->n, &(pgn_esq->RRN_no), compara_ponteiros);
 }
 
-void insere_ordenado_pontPromovido(no_arvore_t *no_esq, no_arvore_t *no_dir, int ponteiro_promovido, int pos){
-    int tam_vet_pont_temp = no_esq->n + no_dir->n + 3;//tamanho do vetor temporário de ponteiros
-    //(o +3 se deve ao fato de que existem n+1 ponteiros em cada página com 'n' chaves e +1 ponteiro que é o promovido)
-    int vet_temp[tam_vet_pont_temp]; 
-    // vet_temp[pos+1] = ponteiro_promovido;
-    int i;
-    for(i = 0; i < no_esq->n+1; ++i){//copio os ponteiros da página da esquerda
-        vet_temp[i] = no_esq->P[i];
+void insere_ponteiro_em_vet(int *vet_ponteiros, int tam_vet_ponteiros, int pos, int ponteiro){
+    for(int i = tam_vet_ponteiros-1; i > pos; --i){
+        vet_ponteiros[i] = vet_ponteiros[i-1]; //Faço uma shifitada de todos os ponteiros à direita da posição 'pos'
     }
-
-    for(int j = 0; j < no_dir->n+1; ++i, ++j){//copio os ponteiros da página da direita
-        vet_temp[i] = no_dir->P[j];
-    }
-
-    insere_ponteiro_ordenado(vet_temp, tam_vet_pont_temp, ponteiro_promovido);//coloco o ponteiro promovido
-    
-}
-
-void insere_no_temp(temp_no_t *temp, no_arvore_t *no_esq, no_arvore_t *no_dir, InfoInserida_t *info, chave_t *chave_mae){
-
-    //--Inserir chaves--
-
-    //as chaves do nó à esquerda.
-    for(int i = 0; i < no_esq->n; ++i){
-        insere_ordenado_vet_chaves(temp->chaves, &(no_esq->chaves[i]), i+1);
-    }
-
-    //as chaves do nó à direita.
-    for(int i = 0; i < no_dir->n; ++i){
-        insere_ordenado_vet_chaves(temp->chaves, &(no_dir->chaves[i]), i+1);
-    }
-
-    //a chave da mãe
-    insere_ordenado_vet_chaves(temp->chaves, chave_mae, temp->n - 1);
-
-    //a chave promovida
-    int pos_chave_promovida = insere_ordenado_vet_chaves(temp->chaves, info->chave_inserida, temp->n);
-
-    //--Inserir ponteiros--
-
-    //os ponteiros do nó da esquerda
+    vet_ponteiros[pos] = ponteiro;//depois insiro esse ponteiro em sua posição;
 }
 
 void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir, InfoInserida_t *info){
 
-    int tam_no_temp = pgn_esq->no->n + pgn_dir->no->n + 2;//Tamanho do nó temporário
-    temp_no_t *temp_no = aloca_temp_no(tam_no_temp,tam_no_temp+2);
+    //Crio um vetor temporário de ponteiros e de chaves
+    int tam_ponteiros_vet_temp = pgn_esq->no->n + pgn_dir->no->n + 3;//esq + dir + ponteiro_inserido
+    int tam_chaves_vet_temp = pgn_esq->no->n + pgn_dir->no->n + 2;//esq + dir + chave_inserida + chave_mae
+
+    int ponteiros_vet_temp[tam_ponteiros_vet_temp];
+    chave_t chaves_vet_temp[tam_chaves_vet_temp];
 
     //Obtenho a posição da chave mãe.
     int pos_chave_mae = get_pos_chave_mae(pgn_mae, pgn_esq);
 
-    //Coloco as informações no nó temporário.
-    insere_no_temp(temp_no, pgn_esq->no, pgn_dir->no, info, &(pgn_mae->no->chaves[pos_chave_mae]));
+    //Coloco as chaves em seu vetor temporário, de modo a guardar a posição em que insiro a chave_promovida. Para isso, devo:
+    int pos_inserir_ponteiro;
+    {
+        //1-Colocar as chaves da página à esquerda
+        int i;
+        for(i = 0; i < pgn_esq->no->n; ++i){
+            insere_ordenado_vet_chaves(chaves_vet_temp, &(pgn_esq->no->chaves[i]), i+1);
+        }
 
-    //Agora devo inserir as chaves do vetor temporáio nas páginas de modo a distribui-las corretamente. Para isso:
-    //-devo inserir a chave do meio na página mãe
-    int meio = tam_no_temp/2;
+        //2-Coloar as chaves da página à direita
+        for(int j = 0; j < pgn_dir->no->n; ++j, ++i){
+            insere_ordenado_vet_chaves(chaves_vet_temp, &(pgn_dir->no->chaves[j]), i+1);
+        }
 
-    //troco a chave da mae
-    pgn_mae->no->chaves[pos_chave_mae] = temp_no->chaves[meio];
+        //3-Colocar a chave_mae.
+        insere_ordenado_vet_chaves(chaves_vet_temp, &(pgn_mae->no->chaves[pos_chave_mae]), tam_chaves_vet_temp-1);
 
-    //copiando os valores menores que o valor da mãe para a pagina da esquerda 
-    copia_vet_chaves(temp_no->chaves, pgn_esq->no->chaves, 0, meio-1, 0, meio-1);
+        //4-Colocar a chave_promovida e guardar sua posição de inserção.
+        pos_inserir_ponteiro = insere_ordenado_vet_chaves(chaves_vet_temp, info->chave_inserida, tam_chaves_vet_temp);
+    }
 
-    //copiando os valores maiores que a mae para a pagina da direita
-    copia_vet_chaves(temp_no->chaves, pgn_dir->no->chaves, meio+1, tam_no_temp-1, 0, tam_no_temp-meio-2);
+    //Agora devo inserir os ponteiros. Para isso, devo:
+    {
+        //1-inserir os ponteiros da página à esquerda
+        int i;
+        for(i = 0; i < pgn_esq->no->n + 1; ++i){
+            ponteiros_vet_temp[i] = pgn_esq->no->P[i];
+        }
+
+        //2-inserir os ponteiros da página à direita
+        for(int j = 0; j < pgn_esq->no->n + 1; ++j, ++i){
+            ponteiros_vet_temp[i] = pgn_dir->no->P[j];
+        }
+
+        //3-Por fim, inserir o ponteiro promovido, de movo a deslocar todos os demais ponteiros à direita em uma posição
+        insere_ponteiro_em_vet(ponteiros_vet_temp, tam_ponteiros_vet_temp, pos_inserir_ponteiro+1, *(info->ponteiro_inserido));
+
+    }
+
+    //Com os os ponteiros e chaves em ordem, sobrescrevo a informações dos nós. Para isso:
+
+    //1-Obtenho a posição da chave_mae
+    int meio = (tam_chaves_vet_temp)/2;
+
+    //2-Sobrescrevo a chave_mae com a chave encontrada no meio do vetor de chaves
+    insere_chave_em_vet_chaves(pgn_mae->no->chaves, &(chaves_vet_temp[meio]), meio);
+
+    //3-Sobrescrevo as chaves da página à esquerda
+    copia_vet_chaves(chaves_vet_temp, pgn_esq->no->chaves, 0, meio-1, 0, meio-1);
+
+    //4-Sobrescrevo as chaves da página à direita
+    copia_vet_chaves(chaves_vet_temp, pgn_dir->no->chaves, meio+1, tam_chaves_vet_temp-1, 0, tam_chaves_vet_temp-meio-2);
+
+    //5-Sobrescrevo os ponteiros da página à esquerda
+    copia_vet_ponteiros(ponteiros_vet_temp, pgn_esq->no->P, 0, meio, 0, meio);
+
+    //6-Sobrescrevo os ponteiros da página à direita
+    copia_vet_ponteiros(ponteiros_vet_temp, pgn_dir->no->P, meio, tam_ponteiros_vet_temp-1, 0, tam_ponteiros_vet_temp-meio-3);  
+
+    //7-Modifico a informação acerca da ocupação das páginas
+    pgn_esq->no->n = meio;
+    pgn_dir->no->n = tam_chaves_vet_temp-meio-1;
 
     //Escrever os nós que foram modificados
     fseek(arqArvore, (pgn_mae->RRN_no+1)*TAM_PAGINA, SEEK_SET);
