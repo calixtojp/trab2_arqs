@@ -222,8 +222,8 @@ int busca_por_indexado(InfoDados_t *criterios){
     return -1;
 }
 
-void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes, int *chave, 
-                        chave_t *chave_promovida, int RRN_atual){
+void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes, 
+                    void *info_aux, int chave_busca, pagina_t *pgn_mae, int RRN_atual){
     /*Função recursiva que faz a busca de um valor de idCrime em uma árvore B* cujo campo indexado 
     é idCrime. Esse valor buscado é o 'int chave'. O parâmetro 'int RRN_atual' representa o RRN 
     do nó que está sendo verificado. Quando encontrado um nó dessa árvore que contém o idCrime 
@@ -237,10 +237,11 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
         return;
     }
 
-    //Leio o nó que quero verificar
+    //Leio a página que quero verificar
     fseek(arvore->arqArvore, (RRN_atual+1) * arvore->tam_pagina, SEEK_SET);
-    no_arvore_t *no_aux = alocar_no();
-    fluxo_no(arvore->arqArvore, no_aux, meu_fread);
+    pagina_t *pgn_atual = aloca_pagina();
+    pgn_atual->RRN_no = RRN_atual;
+    fluxo_no(arvore->arqArvore, pgn_atual->no, meu_fread);
 
     /*Defino P como sendo o ponteiro para o próximo nó (na próxima
     chamada recursiva dessa função, ele será o 'RRN_atual').
@@ -252,30 +253,26 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
 
     /*Busco a chave no nó atual. Se encontrar, coloco seu byteOffset em 'Pr'. Se não, coloco
     o RRN do próximo nó no qual devo buscar em 'P'*/
-    Pr = buscaBinNo(no_aux, 0, get_nChaves(no_aux) - 1, *chave, &P);
+    Pr = buscaBinNo(pgn_atual->no, 0, get_nChaves(pgn_atual->no) - 1, chave_busca, &P);
 
     if(Pr == -1){
         //se não encontrou o valor buscado no nó lido, 
         //chamo a função recursivamente para o próximo nó (valor armazenado em P)
-        buscaArvoreRec(arq_dados, arvore, criterios, acoes, chave, chave_promovida, P);
-        /*insercao(RRN_atual, RRN_anterior, &chave_inserir, &chave_promovida, ponteiro_promovido)*/  
+        buscaArvoreRec(arq_dados, arvore, criterios, acoes, info_aux, chave_busca, pgn_atual, P);
+        insercao(arvore, pgn_mae, pgn_atual, info_aux);
     }else{
         //Se encontrou, retorno o byteOffset
         acoes->reg_arv(arq_dados, criterios, Pr);
     }
 
-    desalocar_no(no_aux);
+    desalocar_pagina(pgn_atual);
 }
 
-void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcoes *acoes){
+void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit, InfoDados_t *criterios, FncAcoes *acoes, void *info_aux){
     int RRN_raiz = get_noRaiz(arvore->cabecalhoArvore);
 
-    chave_t *chave = alocar_chave();
-
     //chamo a função recursiva de busca na árvore B*, a partir do nó raiz
-    buscaArvoreRec(arq_dados, arvore, criterios, acoes, &(criterios->vals_int[pos_crit]), chave, RRN_raiz);
-
-    desalocar_chave(chave);
+    buscaArvoreRec(arq_dados, arvore, criterios, acoes, info_aux, criterios->vals_int[pos_crit], NULL, RRN_raiz);
 }
 
 void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios, FncAcoes *acoes){
@@ -316,7 +313,7 @@ void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterio
     acoes->final(achei_reg_val);
 }
 
-void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes){
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes, void *info_aux){
     /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados e encontra os registros. 
     Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
 
@@ -324,7 +321,7 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
     
     if(posicao_criterio >= 0 && get_noRaiz(arvore->cabecalhoArvore) != -1){
         /*se a árvore B* não é vazia e indexa algum dos critérios de busca, então faço a busca usando-a.*/
-        buscaArvore(arq_dados,arvore,posicao_criterio,criterios,acoes);
+        buscaArvore(arq_dados,arvore,posicao_criterio,criterios,acoes,info_aux);
     }else{
         //se não, faz-se busca sequencial no arquivo de dados
     
@@ -336,25 +333,10 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
     }
 }
 
-/*void insercao(Arvore_t *arvore, no_arvore_t *no_atual, no_arvore_t *no_anterior, chave_t *chave_inserir, int *ponteiro_promovido){
+void insercao(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux){
 
-    // INSERCAO(RRN_atual, RRN_anterior, *chave_inserir, int *ponteiro_promovido):
-    // Se é árvore vazia:
-    //     cria raiz
-    //     insere_ordenado(RRN_atual, chave_inserir, -1)
-    // Se não:
-    //     Se cabe no nó:
-    //         insere_ordenado(RRN_atual, chave_inserir, ponteiro_promovido):
-    //     Se não:
-    //         se é raiz:
+    InfoInserida_t *info_inserir = (InfoInserida_t *) info_aux;
 
-    //             split_1_pra_2(RRN_atual, chave_inserir, ponteiro_promovido)
-    //         se não:
-    //             redistribuiu = redistribuir()
-    //             se não redistribuiu:
-    //                 split_2_pra_3
-
-    
     if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
         printf("arvore vazia\n");
         set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
@@ -364,32 +346,31 @@ void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *cri
         set_nivel_no(no_raiz, get_nroNiveis(arvore->cabecalhoArvore));//o qual possui o nível mais alto
         set_nChaves(no_raiz, 0);//e inicialmente não possui nenhuma chave.
 
-        insere_ordenado_no(chave_inserir, no_raiz);//escrevo as informações do nó
+        insere_ordenado_no(info_inserir, no_raiz);//escrevo as informações do nó
 
         fluxo_no(arvore->arqArvore, no_raiz, meu_fwrite);//escrevo o nó em memória secundária
     }else{//Se a árvore não é vazia
         printf("arvore não está vazia\n");
-        if(get_nChaves(no_atual) < get_ordem_arvore()-1){//Se a nova chave cabe no no_atual
+        if(get_nChaves(pgn_atual) < get_ordem_arvore()-1){//Se a nova chave cabe na página atual
             printf("cabe no nó atual\n");
-            insere_ordenado_no(no_atual, chave_inserir);
-        }else{//Se a nova chave não cabe no no_atual
+            insere_ordenado_no(pgn_atual, info_inserir);
+        }else{//Se a nova chave não cabe na página atual
             printf("não cabe no nó atual\n");
-            if(get_nivel_no(no_atual) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
+            if(get_nivel_no(pgn_atual) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
                 //Faço o split_1_para_2
-                split_1_para_2();
+                split_1_para_2(arvore->arqArvore,arvore->cabecalhoArvore,pgn_atual,info_inserir);
             }else{//Se estou inserindo em qualquer nó que não no raiz
                 //tento a redistribuição
-                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, no_anterior, no_atual, chave_inserir);
+                int conseguiu_redistribuir = redistribuicao(arvore->arqArvore, pgn_mae, pgn_atual, info_inserir);
                 if(!conseguiu_redistribuir){//Se não conseguiu redistribuir,
                     //Faço o split_2_para_3
-                    split_2_para_3();
+                    split_2_para_3(arvore->arqArvore,arvore->cabecalhoArvore,pgn_mae,pgn_esq,pgn_dir,info_inserir);
                 }
 
             }
         }
     }
 }
-*/
 
 /*---------------------------------------AÇÕES-------------------------------------------*/
 void achouReg(int flag){
@@ -454,126 +435,6 @@ void insere_reg(ArqDados_t *arq_dados, Arvore_t *arvore, dados_t *registro){
     printf("vou inserir o registro:\n");
     mostrar_campos(registro);
 }
-// int inserirRegStdin(ArqDados_t *arq_dados, ArqIndex_t *arq_index, int qtdInserir){
-//     /*
-//         Função que lê um registro da entrada padrão (por meio do scanf) e adiciona-o
-//     no arquivo de dados e de index.
-
-//         Entradas: 
-//         -ArqDados_t na qual será inserido o registro no final
-//     do arquivo de dados.
-//         -ArqIndex_t no qual será inserido o registro lido (no vetor temporário carregado dentro da própria struct)
-//         -int qtdInserir é a quantidade de registros que serão inseridos
-
-//         Comportamento:
-//         -A função altera o vetor temporário armazenado na struct ArqIndex_t, bem como a quantidade
-//         de registros armazenados no vetor temporário (arq_index->qtdReg_vetTemp). Após utilizado o vetor temporário,
-//         altera a quantidade de registros no cabeçalho do arquivo de index (carregado em RAM) e adiciona o vetor 
-//         temporário ao vetor Original de registros. 
-//     */
-
-//     //1-escolher o tipo que será usado
-//     int tipo = arq_index->tipoDadoInt;
-//     //2-mover o cursor do arquivo de dados para o fim (onde será feita a escrita)
-//     fseek(arq_dados->arqDados, 0, SEEK_END);
-
-//     //3-alocar o vetor temporário para alocar os registros nele
-//     criarVetTemp(arq_index, qtdInserir);
-    
-//     //4-selecionar os dados usados, bem como as funções
-//     dados_t *reg = alocar_dados();
-//     FncGetCampoIndexIndexado fncsGetCampoIndexado[] = {getCampoInt, getCampoStr};
-//     FncCampoNulo fncsCampoNulo[] = {campoNulo_int, campoNulo_str};
-
-//     //5-inserir os registros válidos no vetor temporário e no arquivo de dados
-//     int pos_inserir = 0;
-//     int contador = qtdInserir;
-//     while(contador>0){
-
-//         //5.1-ler o registro e ver se o campo indexado é nulo
-//         leRegStdin(reg);
-//         void *campoIndexado = fncsGetCampoIndexado[tipo](reg, arq_index->campoIndexado);
-//         int eh_campo_nulo = fncsCampoNulo[tipo](campoIndexado);
-
-//         if(eh_campo_nulo==0){
-//             //5.2-Se não é campo nulo, insiro completamente (no arquivo de dados e no vetor armazenado em arq_index)
-//             inserirReg(arq_dados, arq_index, reg, pos_inserir);
-//             pos_inserir++;
-//         }else{
-//             //5.3-Se o campo é nulo, insiro somente no arquivo de dados
-//             prepara_para_escrita(reg);
-//             escrever_bin_registro_dados(reg, arq_dados->arqDados, arq_dados->cabecalhoDados);
-//             cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
-//         }
-//         contador--;
-//     }
-
-//     //6-Inserir os registros, que foram adicionados, no vetor original. Para isso:
-//     //6.0-devo selecionar a função de cópia, a quantidade anterior e o vetorOriginal que será usado
-//     FncCopiaVet fncsCopiaVet[] = {copiaVetInt, copiaVetStr};
-//     int qtdRegOriginal = get_qtdReg(arq_index->cabecalhoIndex);
-//     //6.1-devo realocar o vetor original
-//     realocar_vet_index(arq_index, qtdRegOriginal, pos_inserir);
-//     //6.2-copiar os dados que foram inseridos no temporário para o original
-//     void *vetOriginal = escolhe_vet_indx(arq_index);
-//     fncsCopiaVet[tipo](vetOriginal,arq_index->vetTemp,qtdRegOriginal,qtdRegOriginal+pos_inserir-1,0,pos_inserir-1);
-//     set_qtdReg(arq_index->cabecalhoIndex, qtdRegOriginal+pos_inserir);
-// }
-
-// void inserirReg(ArqDados_t *arq_dados, ArqIndex_t *arq_index, dados_t *reg, int pos){
-//     /*
-//         Função que insere um registro no final do arquivo de dados e tenta inserir o campo indexado e byteOffSet 
-//     no vetor temporário armazenado em arq_index->vetTemp.
-//         Entradas:
-//             -reg: registro que será inserido.
-//             -arq_index: possui o vetTemp o qual será possivelmente inserido o indexamento do registro
-//             -arq_dadso: possui o arquivo de dados no qual será inserido o registro recebido
-//         Comportamento:
-//             Ao longo da função, a quantidade de registros armazenados no vetor temporário (em arq_index->qtdReg_vetTemp)
-//             pode ser incrementada o cursor do arquivo de dados começa no final do arquivo e também termina no final do
-//             arquivo (pois o registro foi escrito). A variável proxByteOffset armazenada no cabeçalho do arquivo de dados
-//             será alterada, bem como a variável nroRegArq será incrementada.
-//     */
-//     int tipDado = arq_index->tipoDadoInt;
-
-//     FncCampoNulo fncsCampoNulo[] = {campoNulo_int,campoNulo_str};
-//     FncGetCampoIndexIndexado fncsGetCampo[] = {getCampoInt,getCampoStr};
-
-//     void *campoIndexado = malloc(sizeof(void));
-//     int eh_campo_nulo;
-    
-//     //obtenho o campo indexado (int ou str)
-//     campoIndexado = fncsGetCampo[tipDado](reg, arq_index->campoIndexado);
-
-//     //Vejo se o campo é nulo ou não (para poder indexá-lo)
-//     eh_campo_nulo = fncsCampoNulo[tipDado](campoIndexado);
-
-//     if(eh_campo_nulo == 0){//Se não é campo nulo
-//         int antigoQtdReg = arq_index->qtdReg_vetTemp;
-//         arq_index->qtdReg_vetTemp++;
-
-//         long int byte_reg_inserir;
-//         byte_reg_inserir = get_proxByteOffset(arq_dados->cabecalhoDados);
-
-//         //Com o campo indexado e com o byteOffSet, consigo criar o indexamento do registro a ser inserido
-
-//         void *dadoInserir = malloc(sizeof(void));
-
-//         FncSetDadoIndx fncsSetDadoIndx[] = {setDadoIndxInt,setDadoIndxStr};
-//         FncSetVetIndx fncsSetVetIndx[] = {setVetIndx_int,setVetIndx_str};
-
-//         dadoInserir = escolhe_indx_dado(arq_index);
-
-//         fncsSetDadoIndx[tipDado](dadoInserir, byte_reg_inserir, campoIndexado);
-//         fncsSetVetIndx[tipDado](arq_index->vetTemp, pos, dadoInserir);
-//     }
-
-//     //Escrevo no registro de dados
-//     prepara_para_escrita(reg);
-//     escrever_bin_registro_dados(reg,arq_dados->arqDados,arq_dados->cabecalhoDados); 
-//     //incremento o nroRegArq
-//     cabecalho_nroRegArq_incrementar(arq_dados->cabecalhoDados, 1);
-// }
 
 void reiniciarCursorDados(ArqDados_t *arq_dados){
     fseek(arq_dados->arqDados,0,SEEK_SET);
