@@ -7,74 +7,75 @@
 //Funcionalidade [8]
 void create_index(){
 
-//     //Aloca os tipos que serão usados
-//     ArqDados_t *arq_dados = alocar_arq_dados();
-//     erro(arq_dados);
-//     Arvore_t *arvore = alocar_arvore();
-//     erro(arvore);
+    //Aloca os tipos que serão usados
+    ArqDados_t *arq_dados = alocar_arq_dados();
+    erro(arq_dados);
+    Arvore_t *arvore = alocar_arvore();
+    erro(arvore);
 
-//     //Faz a leitura dos inputs
-//     ler_nome_arq_dados(arq_dados);
-//     ler_campoIndexado(arq_index);
-//     ler_tipoDado(arq_index);
-//     ler_nome_arq_index(arq_index);
+    //Faz a leitura dos inputs
+    ler_nome_arq_dados(arq_dados);
+    ignorar_palavra_stdin();
+    ignorar_palavra_stdin();
+    ler_nome_arvore(arvore);
 
-//     //Com os inputs armazenados, faço 
-//     //a abertura dos arquivos.
-//     abrir_arq_dados(arq_dados, "rb");
-//     abrir_arq_index(arq_index, "wb");
+    //Com os inputs armazenados, faço 
+    //a abertura dos arquivos.
+    abrir_arq_dados(arq_dados, "rb");
+    iniciar_arvore(arvore, "w+b");
 
-//     //Ler o cabeçalho do arquivo de dados
-//     ler_cabecalho_dados(arq_dados);
+    //Ler o cabeçalho do arquivo de dados
+    ler_cabecalho_dados(arq_dados);
 
-//     //Verificar consistência dos dados do arquivo
-//     if(testarStatusDados(arq_dados)==0){
-//         mensagem_erro();
-//     }
+    //Verificar consistência dos dados do arquivo
+    if(testarStatusDados(arq_dados)==0){
+        mensagem_erro();
+    }
 
-//     long int byteOffSetAtual = getTamCabecalhoDados(arq_dados);
+    alterarStatusArvore(arvore, 0);
+    setCabecalhoArvoreNulo(arvore);
+    escreverCabecalhoArvore(arvore);
 
-//     //Aloco espaço para o vetor que armazenará o arquivo de index
-//     unsigned int nroRegValidos = get_nroRegValidos(arq_dados);
-//     alocar_vet_index(arq_index, nroRegValidos);
+    //Configuro a struct de ações para a inserção
+    FncAcoes *acoes = alocar_acoes();
+    set_acoes(acoes, NoOpAcaoRegSeq, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
 
-//     int foi_escrito;
-//     //tem 1 se conseguiu indexar o registro, 0 caso contrário
+    //A primeira chave que vou inserir, deve ser feita manualmente, pois
+    //a busca do processaRegistros não pode ser executada em uma árvore vazia
 
-//     int pos_reg = 0;
-//     //Guarda a posição que será escrito o registro  
+    InfoDados_t *dado_inserir_arqDados;
+    InfoInserida_t *dado_inserir_arvore;
 
-//     do{
-//         foi_escrito = indexaRegistro(arq_dados, arq_index, pos_reg, &byteOffSetAtual);
-//         pos_reg++;
-//     }while(foi_escrito==1);
+    //Ler os dados que serão inseridos.
+    dado_inserir_arqDados = ler_dados_registro(ler_bin_registro, arq_dados);
+    if(validaInfoDados(dado_inserir_arqDados)){
+        
+    }
 
-//     //Com o os index carregados em RAM, faço a ordenação
-//     int qntd_registros = pos_reg-1;
-//     ordenaVetIndex(arq_index, qntd_registros);
+    //mostrar_info_dados(dado_inserir_arqDados);
 
-//     //Antes de começar a escrever o arquivo de index, 
-//     //devo configurar seu status para '0'. Após isso,
-//     //inicio a escrita do arquivo de index.
-//     alterarStatusIndex(arq_index,0);
-//     alterarQtdRegIndex(arq_index, qntd_registros);
-//     escreveArqIndex(arq_index);
+    //Inserir na árvore
+    dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados);
+    insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
-//     //Agora, indico que o arquivo está consistente, 
-//     //pois as alterações já foram realizadas
-//     reiniciarCursorIndex(arq_index);
-//     alterarStatusIndex(arq_index,1);
-//     escreverStatusIndex(arq_index);
+    desalocar_InfoDados(dado_inserir_arqDados);
+    desalocar_InfoInserida(dado_inserir_arvore);
 
-//     //Fechar arquivos
-//     fechar_arq_index(arq_index);
-//     fechar_arq_dados(arq_dados);
+    int qtd_leituras = get_nroRegTotal(arq_dados);
+    for(int cont = 0; cont < qtd_leituras; ++cont){
 
-//     binarioNaTela(getNomeArqIndex(arq_index));
+    }
 
-//     //Desalocar tipos utilizados
-//     desalocar_ArqDados(arq_dados);
-//     desalocar_ArqIndex(arq_index);
+
+    //Fechar arquivos
+    fechar_arvore(arvore);
+    fechar_arq_dados(arq_dados);
+
+    binarioNaTela(getNomeArqIndex(arvore));
+
+    //Desalocar tipos utilizados
+    desalocar_ArqDados(arq_dados);
+    desalocar_Arvore(arvore);
 }
 
 //Funcionalidade [9]
@@ -203,7 +204,7 @@ void insert_into(){
         insercao_arqDados(arq_dados, dado_inserir_arqDados);
 
         //Inserir na árvore
-        dado_inserir_arvore = criar_InfoInserida(dado_inserir_arqDados);
+        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados);
         insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
         desalocar_InfoDados(dado_inserir_arqDados);
@@ -227,7 +228,7 @@ void insert_into(){
         printf("Inseriu dados\n");
 
         //Inserir na árvore
-        dado_inserir_arvore = criar_InfoInserida(dado_inserir_arqDados);
+        dado_inserir_arvore = criar_InfoInserida(arq_dados, dado_inserir_arqDados);
         printf("Criei info inserir\n");
         processaRegistros(arq_dados, arvore, dado_inserir_arqDados, acoes, dado_inserir_arvore);
         printf("Processei\n");

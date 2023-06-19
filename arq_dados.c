@@ -801,7 +801,6 @@ void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **val
 	strcpy(nomes[1],"dataCrime"); //copio o nome do campo
 	vals_int[1] = -1; //indico no vetor de valores int que seu valor é str
 	copia_n_chars(vals_str[1], reg->dataCrime, 10);  //copio o valor no vetor de str
-	(vals_str[1])[10] = '\0';
 
 	strcpy(nomes[2],"numeroArtigo"); //copio o nome do campo
 	strcpy(vals_str[2],"int"); //indico no vetor de valores str que seu valor é int
@@ -810,19 +809,14 @@ void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **val
 	strcpy(nomes[3],"lugarCrime"); //copio o nome do campo
 	vals_int[3] = -1; //indico no vetor de valores int que seu valor é str
 	strcpy(vals_str[3], reg->lugarCrime);  //copio o valor no vetor de str
-	printf("Strlen lugar = %d\n",(int)strlen(reg->lugarCrime));
-	printf("Copia = %s\n",vals_str[3]);
 	
 	strcpy(nomes[4],"descricaoCrime"); //copio o nome do campo
 	vals_int[4] = -1; //indico no vetor de valores int que seu valor é str
 	strcpy(vals_str[4], reg->descricaoCrime);  //copio o valor no vetor de str
-	printf("Strlen descricao = %d\n",(int)strlen(reg->descricaoCrime));
-	printf("Copia = %s\n",vals_str[4]);
 
 	strcpy(nomes[5],"marcaCelular"); //copio o nome do campo
 	vals_int[5] = -1; //indico no vetor de valores int que seu valor é str
 	copia_n_chars(vals_str[5], reg->marcaCelular, 12);  //copio o valor no vetor de str
-	(vals_str[5])[12] = '\0';
 }
 
 
@@ -895,8 +889,6 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 		"descricaoCrime"
 	};
 
-	printf("Fazendo alterações\n");
-
 	int tam;
 	for(int i = 0; i < qtd_crit; ++i){
 		int novo_tam;
@@ -905,11 +897,9 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 				int k;
 				switch (j){
 					case 0://idCrime
-						printf("Idcrime: %d\n",vet_vals_int[i]);
 						reg->idCrime = vet_vals_int[i];
 						break;
 					case 1://dataCrime
-						printf("dataCrime: %s\n",vet_vals_str[i]);
 						tam = strlen(vet_vals_str[i]);
 						for(k = 0; k < tam; ++k){
 							reg->dataCrime[k] = vet_vals_str[i][k];
@@ -920,11 +910,9 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 
 						break;
 					case 2://numeroArtigo
-						printf("numeroArtigo: %d\n",vet_vals_int[i]);
 						reg->numeroArtigo = vet_vals_int[i];
 						break;
 					case 3://marcaCelular
-						printf("marcaCelular: %s\n",vet_vals_str[i]);
 						tam = strlen(vet_vals_str[i]);
 						for(k = 0; k < tam; ++k){
 							reg->marcaCelular[k] = vet_vals_str[i][k];
@@ -935,13 +923,11 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 
 						break;
 					case 4://lugarCrime
-						printf("lugarCrime: %s\n",vet_vals_str[i]);
 						novo_tam = strlen(vet_vals_str[i]);
 						reg->lugarCrime = malloc(sizeof(char)*(novo_tam+1));
 						strcpy(reg->lugarCrime, vet_vals_str[i]);
 						break;
 					case 5://descricaoCrime
-						printf("descricaoCrime: %s\n",vet_vals_str[i]);
 						novo_tam = strlen(vet_vals_str[i]);
 						reg->descricaoCrime = malloc(sizeof(char)*(novo_tam+1));
 						strcpy(reg->descricaoCrime, vet_vals_str[i]);
@@ -952,7 +938,6 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 			}
 		}
 	}
-	printf("registro final\n");
 	mostrar_campos(reg);
 
 }

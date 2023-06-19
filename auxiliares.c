@@ -137,11 +137,13 @@ void desalocar_vetor_string(char **vetor, int n_elem){
 
 
 void copia_n_chars(char *str1, char *str2, int n){
-    for(int i=0; i<n; i++){
-        if(str1[i] == '\0'){//Se cheguei no '\0' interrompo a cópia dos demais chars
-            break;
-        }
-        str1[i] = str2[i];
+    int cont = 0;
+    while(str2[cont] != '\0'){
+        str1[cont] = str2[cont];
+        cont++;
+    }
+    if(cont < n){//coloco o '\0' caso haja espaço para.
+        str1[cont] = '\0';
     }
 }
 

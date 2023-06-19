@@ -13,9 +13,9 @@
     }pagina_t;
 
     typedef struct InfoInserida{//Struct auxiliar
-        int info_valida;//flag que indica se há uma informação válida dentro dessa struct
-        chave_t *chave_inserida;
-        int *ponteiro_inserido;
+        int valida;//flag que indica se há uma informação válida dentro dessa struct
+        chave_t *chave;
+        int *ponteiro;
     }InfoInserida_t;
 
     typedef enum result_redistribuicao{
@@ -45,13 +45,17 @@
     void setStatusArvore(cabecalho_arvore_t *cabecalho, char status);
     int get_noRaiz(cabecalho_arvore_t *cabecalho);
     void set_noRaiz(cabecalho_arvore_t *cabecalho, int nova_raiz);
+    void set_nroChaves(cabecalho_arvore_t *cabecalho, int nroChaves);
+    void set_RRNproxNo(cabecalho_arvore_t *cabecalho, int RRN);
     int get_nChaves(no_arvore_t *no);
     void set_nChaves(no_arvore_t *no, int nova_nChaves);
     int get_nroNiveis(cabecalho_arvore_t *cabecalho);
     void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis);
     int get_nivel_no(no_arvore_t *no);    
     void set_nivel_no(no_arvore_t *no, int nivel);
+    int get_chaves_C(chave_t *chave);
     void set_chaves_C(chave_t *chave, int C);
+    long int get_chaves_Pr(chave_t *chave);
     void set_chaves_Pr(chave_t *chave, int Pr);
 
     //funções fluxo (escrita/leitura) da memória
@@ -63,8 +67,8 @@
 
     //Demais funções
     long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int *P);
-    void insere_ordenado_no(no_arvore_t *no_inserir, chave_t *chave_inserir);
-    result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t *png_irma, InfoInserida_t *info);
+    void insere_ordenado_no(FILE *arq, pagina_t *pgn, InfoInserida_t *info);
+    result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t **png_irma, InfoInserida_t *info);
     void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_atual, InfoInserida_t *info);
     void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info);
 

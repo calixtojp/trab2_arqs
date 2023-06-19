@@ -48,6 +48,8 @@ void ler_cabecalho_dados(ArqDados_t *arq_dados);
 void ler_cabecalho_arvore(Arvore_t *arvore);
 void escreverCabecalhoDados(ArqDados_t *arq_dados);
 void escreverCabecalhoArvore(Arvore_t *arvore);
+void setCabecalhoArvoreNulo(Arvore_t *arvore);
+int validaInfoDados(InfoDados_t *info);
 
 /*----------------------------Gets, Sets e escritas/leituras -----------------------------------*/
 int getTamCabecalhoDados(ArqDados_t *arq_dados);
@@ -91,7 +93,7 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
 
 /*------------------------------------------DEMAIS FUNÇÕES---------------------------------*/
 void insercao_arqDados(ArqDados_t *arq_dados, InfoDados_t *info_inserir);
-InfoInserida_t *criar_InfoInserida(InfoDados_t *info_dados);
+InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados);
 void mostrar_info_dados(InfoDados_t *criterios);
 InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados);
 
