@@ -191,10 +191,10 @@ InfoDados_t *ler_criterios_busca(){
     return criterios;
 }
 
-InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados){
+InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados, int *tam_reg){
     InfoDados_t *info = alocar_InfoDados(6);
     dados_t *reg = alocar_dados();
-    metodoLeitura(reg, arq_dados->arqDados);
+    *tam_reg = metodoLeitura(reg, arq_dados->arqDados);
 
     regDados_para_vetores(reg, info->nomes, info->vals_int, info->vals_str);
 
@@ -252,6 +252,7 @@ int busca_por_indexado(InfoDados_t *criterios){
             return i;
         }
     }
+
     return -1;
 }
 
@@ -317,8 +318,7 @@ void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterio
     //Recebe -1 se nenhum satisfaz ou 1 se pelo menos 1 satisfaz
 
     dados_t *registro = alocar_dados();//aloco um memoria para leitura de um registro de dados
-        
-    long int byteOffSet_atual = len_cabecalho_dados();
+    
     //Consegui_ler armazena -1 se não conseguiu ler e armazena o tamanho do registro caso consiga ler
     int consegui_ler = ler_bin_registro(registro, arq_dados->arqDados);
 
@@ -333,7 +333,6 @@ void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterio
 
             acoes->reg_seq(registro);
         }
-        byteOffSet_atual += consegui_ler;
         //sempre desaloco o registro, pois preciso desalocar os campos de tamanho variavel do registro
         desalocar_registro(registro);
         //Em seguida aloco outro registro, para fazer a leitura
@@ -386,25 +385,32 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
 
     //Nessa ação, a info_aux será a informação inserida. Logo, devo fazer o casting.
     InfoInserida_t *info_inserir = (InfoInserida_t *) info_aux;
-
-    if(info_inserir->valida != 1){//Se não é uma informação de inserção válida, só dou return.
+    
+    //Se não é uma informação de inserção válida, só dou return.
+    if(info_inserir->valida != 1){
         return;
     }
 
-    printf("info_inserir que chegou: C%d|Pr:%ld|P:%d\n", get_chaves_C(info_inserir->chave), 
+    printf("info_inserir que chegou: C:%d|Pr:%ld|P:%d\n", get_chaves_C(info_inserir->chave), 
                                                    get_chaves_Pr(info_inserir->chave), *(info_inserir->ponteiro));
 
     //Insiro o registro no arquivo árvore.
-    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){//Se a árvore for vazia
-        printf("arvore vazia\n");
-        set_nroNiveis(arvore->cabecalhoArvore, 1);//configuro a nova altura da árvore
+
+    //Se a árvore for vazia, crio um nó raiz
+    if(get_nroNiveis(arvore->cabecalhoArvore) == 0){
+        printf("arvore vazia\n");    
+        //configuro a nova altura da árvore
+        set_nroNiveis(arvore->cabecalhoArvore, 1);
 
         //configuro o novo nó raiz,
         pagina_t *pgn_raiz = aloca_pagina();
-
         pgn_raiz->RRN_no = 0;
         set_nivel_no(pgn_raiz->no, get_nroNiveis(arvore->cabecalhoArvore));//o qual possui o nível mais alto
         set_nChaves(pgn_raiz->no, 0);//e inicialmente não possui nenhuma chave.
+
+        //atualizo o cabecalho
+        set_noRaiz(arvore->cabecalhoArvore,0);
+        set_RRNproxNo(arvore->cabecalhoArvore, get_RRNproxNo(arvore->cabecalhoArvore)+1);
 
         insere_ordenado_no(arvore->arqArvore, pgn_raiz, info_inserir);//escrevo as informações do nó
 
@@ -435,8 +441,10 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
                 }else{//Se não conseguiu redistribuir:
                     printf("vou fazer split2_3\n");
                     if(resultado == retorna_esq){//Ou seja, o ponteiro pgn_irma aponta para página irmã à esquerda
+                        printf("retornei esquerda\n");
                         split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_mae, pgn_irma, pgn_atual, info_inserir);
                     }else{//Ou seja (resultado == retorna_dir), o ponteiro pgn_irma aponta para página irmã à direita
+                        printf("retornei direita\n");
                         split_2_para_3(arvore->arqArvore, arvore->cabecalhoArvore, pgn_mae, pgn_atual, pgn_irma, info_inserir);
                     }
                 }
@@ -444,6 +452,8 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
             }
         }
     }
+
+    set_nroChaves(arvore->cabecalhoArvore, get_nroChaves(arvore->cabecalhoArvore)+1);
 }
 
 void achouReg(int flag){
@@ -505,14 +515,18 @@ void NoOpAcaoRegSeq(dados_t *ignorar1){
 }
 
 /*---------------------------------------DEMAIS FUNÇÕEs-------------------------------------------*/
+long int getProxByteOffSet(ArqDados_t *arq_dados){ 
+    //Função que permite que o 'funcionalidades.c' acesse uma função do 'arq_dados.c'.
+    return get_proxByteOffset(arq_dados->cabecalhoDados);
+}
 
-InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados){
+InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados, long int byteOffset){
     InfoInserida_t *inserida_retorno = alocar_InfoInserida();
     inserida_retorno->valida = 1;//Configuro como uma informação válida
     for(int i = 0; i < info_dados->qtd_crit; ++i){//Laço que acha o idCrime e escreve-o na chave_t.
         if(strcmp(info_dados->nomes[i], "idCrime")==0){
             set_chaves_C(inserida_retorno->chave, info_dados->vals_int[i]);
-            set_chaves_Pr(inserida_retorno->chave, get_proxByteOffset(arq_dados->cabecalhoDados));
+            set_chaves_Pr(inserida_retorno->chave, byteOffset);
             break;
         }
     }
@@ -576,4 +590,18 @@ int validaInfoDados(InfoDados_t *info){
     }else{
         return 1;
     }
+}
+
+int lerRegDoArqDados(dados_t *reg, FILE *arq){
+    /*'funcionlidades.c' não pode ter acesso direto às funções do 'arq_dados.c'. 
+    Como 'ler_bin_registro()' é do 'arq_dados.c', faz-se necessário uma máscara para que o 
+    'funcionalidades.c' realize as ações de leitura.*/
+    return ler_bin_registro(reg, arq);
+}
+
+int lerRegDoStdin(dados_t *reg, FILE *arq){
+    /*'funcionlidades.c' não pode ter acesso direto às funções do 'arq_dados.c'. 
+    Como 'leRegStdin()' é do 'arq_dados.c', faz-se necessário uma máscara para que o 
+    'funcionalidades.c' realize as ações de leitura.*/
+    return leRegStdin(reg);
 }

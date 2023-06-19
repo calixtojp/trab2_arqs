@@ -93,8 +93,12 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
 
 /*------------------------------------------DEMAIS FUNÇÕES---------------------------------*/
 void insercao_arqDados(ArqDados_t *arq_dados, InfoDados_t *info_inserir);
-InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados);
+InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados, long int byteOffset);
 void mostrar_info_dados(InfoDados_t *criterios);
-InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados);
+InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados, int *tam_reg);
+int lerRegDoArqDados(dados_t *reg, FILE *arq);
+int lerRegDoStdin(dados_t *reg, FILE *arq);
+long int getByteOffSetAtual(ArqDados_t *arq_dados);
+long int getProxByteOffSet(ArqDados_t *arq_dados);
 
 #endif

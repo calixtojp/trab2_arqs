@@ -45,8 +45,11 @@
     void setStatusArvore(cabecalho_arvore_t *cabecalho, char status);
     int get_noRaiz(cabecalho_arvore_t *cabecalho);
     void set_noRaiz(cabecalho_arvore_t *cabecalho, int nova_raiz);
+    int get_nroChaves(cabecalho_arvore_t *cabecalho);
     void set_nroChaves(cabecalho_arvore_t *cabecalho, int nroChaves);
+    int get_RRNproxNo(cabecalho_arvore_t *cabecalho);
     void set_RRNproxNo(cabecalho_arvore_t *cabecalho, int RRN);
+    void set_lixoCabecalho(cabecalho_arvore_t *cabecalho);
     int get_nChaves(no_arvore_t *no);
     void set_nChaves(no_arvore_t *no, int nova_nChaves);
     int get_nroNiveis(cabecalho_arvore_t *cabecalho);

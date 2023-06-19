@@ -36,9 +36,6 @@ void create_index(){
     setCabecalhoArvoreNulo(arvore);
     escreverCabecalhoArvore(arvore);
 
-    //Configuro a struct de ações para a inserção
-    FncAcoes *acoes = alocar_acoes();
-    set_acoes(acoes, NoOpAcaoRegSeq, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
 
     //A primeira chave que vou inserir, deve ser feita manualmente, pois
     //a busca do processaRegistros não pode ser executada em uma árvore vazia
@@ -46,23 +43,56 @@ void create_index(){
     InfoDados_t *dado_inserir_arqDados;
     InfoInserida_t *dado_inserir_arvore;
 
-    //Ler os dados que serão inseridos.
-    dado_inserir_arqDados = ler_dados_registro(ler_bin_registro, arq_dados);
-    if(validaInfoDados(dado_inserir_arqDados)){
-        
-    }
+    int cont = 0;//contador de registros lidos
+    long int byteOffset_atual = getTamCabecalhoDados(arq_dados); //contador de byteOffset atual
+    int tam_reg; //tamanho do registro lido
+
+    //Procura um registro válido para inserir na árvore e criar a raiz
+    //como não se deve inserir registros removidos logicamente, procura-se um válido
+    printf("Insercao %d\n",cont+1);
+    do{
+        dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
+        cont++;
+    }while(!validaInfoDados(dado_inserir_arqDados));
+
 
     //mostrar_info_dados(dado_inserir_arqDados);
 
     //Inserir na árvore
-    dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados);
+    dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
+    byteOffset_atual += tam_reg;
     insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
     desalocar_InfoDados(dado_inserir_arqDados);
     desalocar_InfoInserida(dado_inserir_arvore);
 
+    //Agora, insiro na árvore usando a busca do processa registros.
+
+    //Configuro a struct de ações para a inserção
+    FncAcoes *acoes = alocar_acoes();
+    set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
+
     int qtd_leituras = get_nroRegTotal(arq_dados);
-    for(int cont = 0; cont < qtd_leituras; ++cont){
+    for(; cont < qtd_leituras; ++cont){
+        if(cont >= 12){
+            reiniciarCursorArvore(arvore);
+            alterarStatusArvore(arvore, 1);
+            escreverCabecalhoArvore(arvore);
+            fechar_arvore(arvore);
+            return;
+        }
+        printf("insercao %d\n",cont+1);
+        
+        dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
+        if(validaInfoDados(dado_inserir_arqDados)){
+            //se o registro é válido, então insiro no árvore
+            dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
+            processaRegistros(arq_dados,arvore,dado_inserir_arqDados,acoes,dado_inserir_arvore);
+
+            desalocar_InfoDados(dado_inserir_arqDados);
+            desalocar_InfoInserida(dado_inserir_arvore);
+        }
+        byteOffset_atual += tam_reg;
 
     }
 
@@ -71,7 +101,7 @@ void create_index(){
     fechar_arvore(arvore);
     fechar_arq_dados(arq_dados);
 
-    binarioNaTela(getNomeArqIndex(arvore));
+    binarioNaTela(getNomeArvore(arvore));
 
     //Desalocar tipos utilizados
     desalocar_ArqDados(arq_dados);
@@ -190,13 +220,16 @@ void insert_into(){
 
     InfoDados_t *dado_inserir_arqDados;
     InfoInserida_t *dado_inserir_arvore;
+
+    int tam_reg; //tamanho do registro lido
+    long int byteOffset; //guarda o byteOffset do registro que vou inserir
     
     if(arvore_vazia(arvore)){
         //Se a árvore está vazia, então a busca executada pelo processaRegistros não pode ser efetuada.
         //Desse modo, a inserção deve ser feita de maneira manual.
         printf("Arvore vazia\n");
         //Ler os dados que serão inseridos.
-        dado_inserir_arqDados = ler_dados_registro(leRegStdin,arq_dados);
+        dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);
 
         //mostrar_info_dados(dado_inserir_arqDados);
 
@@ -204,7 +237,8 @@ void insert_into(){
         insercao_arqDados(arq_dados, dado_inserir_arqDados);
 
         //Inserir na árvore
-        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados);
+        byteOffset = getProxByteOffSet(arq_dados);
+        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset);
         insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
         desalocar_InfoDados(dado_inserir_arqDados);
@@ -219,7 +253,7 @@ void insert_into(){
     for(int i=1; i<=qtdInserir; i++){
         printf("Arvore com coisa\n");
         //Ler os dados que serão inseridos.
-        dado_inserir_arqDados = ler_dados_registro(leRegStdin,arq_dados);
+        dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);
         
         //mostrar_info_dados(dado_inserir_arqDados);
 
@@ -228,7 +262,8 @@ void insert_into(){
         printf("Inseriu dados\n");
 
         //Inserir na árvore
-        dado_inserir_arvore = criar_InfoInserida(arq_dados, dado_inserir_arqDados);
+        byteOffset = getProxByteOffSet(arq_dados);
+        dado_inserir_arvore = criar_InfoInserida(arq_dados, dado_inserir_arqDados,byteOffset);
         printf("Criei info inserir\n");
         processaRegistros(arq_dados, arvore, dado_inserir_arqDados, acoes, dado_inserir_arvore);
         printf("Processei\n");

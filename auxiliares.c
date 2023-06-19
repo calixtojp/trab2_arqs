@@ -137,18 +137,26 @@ void desalocar_vetor_string(char **vetor, int n_elem){
 
 
 void copia_n_chars(char *str1, char *str2, int n){
+    //copia uma string para outra até o '\0' ou até o tamanho maximo 'int n'
     int cont = 0;
-    while(str2[cont] != '\0'){
+    do{
         str1[cont] = str2[cont];
         cont++;
-    }
-    if(cont < n){//coloco o '\0' caso haja espaço para.
-        str1[cont] = '\0';
+    }while(cont < n && str2[cont] != '\0');
+}
+
+void tira_dolar(char *str, int tam){
+    //coloca '\0' em uma string de tamanho fixo composta por conteudo + n*$
+    for(int i=0; i<tam; i++){
+        if(str[i] == '$'){
+            str[i] = '\0';
+            break;
+        }
     }
 }
 
 char *truncar(char *original, int tam_truncamento){
-    //funcao que faz um string ter exatos 12 caracteres
+    //funcao que faz uma string ter exatos 12 caracteres
     char *truncado = malloc(sizeof(char)*tam_truncamento);
 
     int tam = strlen(original);

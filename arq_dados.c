@@ -627,7 +627,8 @@ void ler_bin_campos_fixos(FILE *arq_bin, dados_t *registro, int *flag_chegou_fim
 	if(retorno!=10){
 		*flag_chegou_fim = 1;
 		return;
-	}	
+	}
+	tira_dolar(registro->dataCrime,10);
 
 	retorno = fread(&(registro->numeroArtigo), sizeof(int), 1, arq_bin);
 	if(retorno!=1){
@@ -640,6 +641,7 @@ void ler_bin_campos_fixos(FILE *arq_bin, dados_t *registro, int *flag_chegou_fim
 		*flag_chegou_fim = 1;
 		return;
 	}
+	tira_dolar(registro->marcaCelular,12);
 }
 
 void ler_bin_campos_variaveis(FILE *arq_bin, dados_t *registro, int *flag_chegou_fim){
@@ -750,12 +752,11 @@ cabecalho_t *ler_dados_cabecalho(FILE *arq_bin){
 	return cabecalho_retorno;
 }
 
-int leRegStdin(dados_t *reg, FILE *ignorar){
+int leRegStdin(dados_t *reg){
     /*
 		Lê um buffer da entrada padrão stdin e insere o
         os dados do registro. Retorna o tamanho do registro lido.
 
-		'FILE *ignorar' existe para manter a integridade do ponteiro de função.
     */
 
 
@@ -793,7 +794,6 @@ int leRegStdin(dados_t *reg, FILE *ignorar){
 void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **vals_str){
 	/*função que faz a conversão de um registro de dados para vetores, que são colocados
 	dentro da struct InfoDados_t */
-
 	strcpy(nomes[0],"idCrime"); //copio o nome do campo
 	strcpy(vals_str[0],"int"); //indico no vetor de valores str que seu valor é int
 	vals_int[0] = reg->idCrime; //copio o valor no vetor de int

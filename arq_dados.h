@@ -65,7 +65,7 @@
 	void mostrar_campo_fixo(char *cursor, int tam_palavra);
 	void mostrar_campo_variavel(char *palavra);
 	cabecalho_t* ler_dados_cabecalho(FILE *arq_bin);
-	int leRegStdin(dados_t *reg, FILE *ignorar);
+	int leRegStdin(dados_t *reg);
 	int testarCriterios(dados_t *reg_dados, char **vet_nomes, char **vet_vals_str, int *vet_vals_int, int qtd_crit);
 	char getStatusDados(cabecalho_t *cabecalho);
 	void escrever_campo_removido(FILE *arq, dados_t *dados);
