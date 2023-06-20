@@ -385,7 +385,7 @@ void prepara_campo_fixo(char *campo, int tam){
 	int i=-1;
 	do{
 		i++;
-	}while(campo[i] != '\0');
+	}while(i<tam && campo[i] != '\0');
 
 	for(int j = i; j < tam; ++j){
 		campo[j] = '$';
@@ -448,9 +448,11 @@ void sair_fechando(FILE *arq_bin){
 }
 
 void desalocar_registro(dados_t *registro){
-	free(registro->descricaoCrime);
-	free(registro->lugarCrime);
-	free(registro);
+	if(registro != NULL){
+		free(registro->descricaoCrime);
+		free(registro->lugarCrime);
+		free(registro);
+	}
 }
 
 int existem_registros(cabecalho_t *cabecalho){
@@ -705,7 +707,7 @@ void mostrar_campos(dados_t *registro){
 void mostrar_campo_fixo(char *cursor, int tam_palavra){
 	int letras_validas = 0;//indica a quantidade de letras válidas de uma palavra
 
-	while((cursor[letras_validas] != '\0') && (letras_validas < tam_palavra)){
+	while((letras_validas < tam_palavra) && (cursor[letras_validas] != '\0')){
 		printf("%c", cursor[letras_validas]);
 		letras_validas++;
 	}
@@ -759,6 +761,8 @@ int leRegStdin(dados_t *reg){
 
     */
 
+   	//Como estou configurando um registro vindo do StdIn, não considero-o como removido
+	reg->removido = '0';
 
    	int tam_final = 0;
    	const int max_tam_str = 200;
@@ -800,7 +804,8 @@ void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **val
 
 	strcpy(nomes[1],"dataCrime"); //copio o nome do campo
 	vals_int[1] = -1; //indico no vetor de valores int que seu valor é str
-	copia_n_chars(vals_str[1], reg->dataCrime, 10);  //copio o valor no vetor de str
+	int tam = copia_n_chars(vals_str[1], reg->dataCrime, 10);  //copio o valor no vetor de str
+	vals_str[1][tam] = '\0';
 
 	strcpy(nomes[2],"numeroArtigo"); //copio o nome do campo
 	strcpy(vals_str[2],"int"); //indico no vetor de valores str que seu valor é int
@@ -816,7 +821,8 @@ void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **val
 
 	strcpy(nomes[5],"marcaCelular"); //copio o nome do campo
 	vals_int[5] = -1; //indico no vetor de valores int que seu valor é str
-	copia_n_chars(vals_str[5], reg->marcaCelular, 12);  //copio o valor no vetor de str
+	tam = copia_n_chars(vals_str[5], reg->marcaCelular, 12);  //copio o valor no vetor de str
+	vals_str[5][tam] = '\0';
 }
 
 
@@ -938,8 +944,6 @@ void vetores_para_regDados(dados_t *reg, char **vet_nomes, char **vet_vals_str, 
 			}
 		}
 	}
-	mostrar_campos(reg);
-
 }
 
 void escreverCampoRemovido(FILE *arqDados){

@@ -87,7 +87,7 @@ void NoOpAcaoRegSeq(dados_t *ignorar1);
 void NoOpAcaoBranch(Arvore_t *ignorar1, pagina_t *ignorar2, pagina_t *ignorar3, void *ignorar4);
 void achouReg(int flag);
 
-void NoOpAcaoFinal(int ignorar1);
+void NoOpAcaoFinal(int ignorar);
 
 void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux);
 

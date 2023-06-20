@@ -49,7 +49,6 @@ void create_index(){
 
     //Procura um registro válido para inserir na árvore e criar a raiz
     //como não se deve inserir registros removidos logicamente, procura-se um válido
-    printf("Insercao %d\n",cont+1);
     do{
         dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
         cont++;
@@ -74,14 +73,13 @@ void create_index(){
 
     int qtd_leituras = get_nroRegTotal(arq_dados);
     for(; cont < qtd_leituras; ++cont){
-        if(cont >= 12){
-            reiniciarCursorArvore(arvore);
-            alterarStatusArvore(arvore, 1);
-            escreverCabecalhoArvore(arvore);
-            fechar_arvore(arvore);
-            return;
-        }
-        printf("insercao %d\n",cont+1);
+        // if(cont >= 38){
+        //     reiniciarCursorArvore(arvore);
+        //     alterarStatusArvore(arvore, 1);
+        //     escreverCabecalhoArvore(arvore);
+        //     fechar_arvore(arvore);
+        //     return;
+        // }
         
         dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
         if(validaInfoDados(dado_inserir_arqDados)){
@@ -227,7 +225,7 @@ void insert_into(){
     if(arvore_vazia(arvore)){
         //Se a árvore está vazia, então a busca executada pelo processaRegistros não pode ser efetuada.
         //Desse modo, a inserção deve ser feita de maneira manual.
-        printf("Arvore vazia\n");
+
         //Ler os dados que serão inseridos.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);
 
@@ -251,22 +249,18 @@ void insert_into(){
 
     //Loop que faz as inserções usando a busca do processaRegistros
     for(int i=1; i<=qtdInserir; i++){
-        printf("Arvore com coisa\n");
         //Ler os dados que serão inseridos.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);
-        
+
         //mostrar_info_dados(dado_inserir_arqDados);
 
         //Inserir no arquivo de dados
+        byteOffset = getProxByteOffSet(arq_dados);
         insercao_arqDados(arq_dados, dado_inserir_arqDados);
-        printf("Inseriu dados\n");
 
         //Inserir na árvore
-        byteOffset = getProxByteOffSet(arq_dados);
         dado_inserir_arvore = criar_InfoInserida(arq_dados, dado_inserir_arqDados,byteOffset);
-        printf("Criei info inserir\n");
         processaRegistros(arq_dados, arvore, dado_inserir_arqDados, acoes, dado_inserir_arvore);
-        printf("Processei\n");
 
         //Desalocar crtérios de busca
         desalocar_InfoDados(dado_inserir_arqDados);

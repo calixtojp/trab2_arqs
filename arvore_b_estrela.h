@@ -74,6 +74,7 @@
     result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, pagina_t **png_irma, InfoInserida_t *info);
     void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_atual, InfoInserida_t *info);
     void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae, pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info);
+    int ehFolha(pagina_t *pgn_atual);
 
     //debug
     void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho);

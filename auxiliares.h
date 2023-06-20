@@ -18,7 +18,7 @@
 	int strParaInt(char *str);
 	int comparar_strings(char *s1, char *s2);
 	int comparar_n_chars(char *s1, char *s2, int n);
-	void copia_n_chars(char *str1, char *str2, int n);
+	int copia_n_chars(char *str1, char *str2, int n);
 	int tamanhoStr(char *string);
 	char *alocar_nome(int tamanho_nome);
 	void pular_campos_fixos(FILE *arq_bin);

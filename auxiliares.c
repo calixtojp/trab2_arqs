@@ -8,7 +8,7 @@
 #define TAM_MAX_CABECALHO_CSV 100
 #define TAM_MAX_PALAVRA 50
 
-void binarioNaTela(char *nomeArquivoBinario){
+void binarioNaTela(char *nomeArquivoBinario) {
     /*
      * Você não precisa entender o código dessa função.
      *
@@ -136,13 +136,15 @@ void desalocar_vetor_string(char **vetor, int n_elem){
 
 
 
-void copia_n_chars(char *str1, char *str2, int n){
+int copia_n_chars(char *str1, char *str2, int n){
     //copia uma string para outra até o '\0' ou até o tamanho maximo 'int n'
     int cont = 0;
     do{
         str1[cont] = str2[cont];
         cont++;
     }while(cont < n && str2[cont] != '\0');
+
+    return cont;
 }
 
 void tira_dolar(char *str, int tam){
@@ -303,9 +305,8 @@ int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comp
     if(ini > fim){//criterio de parada
         return -1;
     }
-
     int meio = (ini+fim)/2;
-
+    
     if(comparacao(vetor,meio,chave)==0){
         //se o vetor[meio] == chave, retorno o meio
         return meio;

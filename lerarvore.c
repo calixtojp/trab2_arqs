@@ -39,7 +39,7 @@ int main(){
         printf("No:%d\nNivel:%d|n:%d\n", i, nivel, n);
 
         fread(&(P), sizeof(int), 1, arq);
-        printf("\tP%d:%d\n", 0, P);
+        printf("\tP%d:%d\n", 1, P);
         for(int j = 0; j < 4; ++j){
             fread(&(C), sizeof(int), 1, arq);
             fread(&(Pr), sizeof(long int), 1, arq);
