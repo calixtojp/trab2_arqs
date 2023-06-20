@@ -661,7 +661,7 @@ char *ler_bin_char_variavel(FILE *arq_bin){
 	//que esse é um campo NULO
 
 	int tam_vet_ret = 0;//tamanho do vetor_retorno
-	char *vetor_retorno = (char*)malloc(sizeof(char));//vetor que será retornado
+	char *vetor_retorno = (char *) malloc(sizeof(char));//vetor que será retornado
 	char cursor;
 	fread(&cursor, sizeof(char), 1, arq_bin);
 	while(cursor != '|'){
@@ -817,6 +817,8 @@ void regDados_para_vetores(dados_t *reg, char **nomes, int *vals_int, char **val
 	
 	strcpy(nomes[4],"descricaoCrime"); //copio o nome do campo
 	vals_int[4] = -1; //indico no vetor de valores int que seu valor é str
+	
+
 	strcpy(vals_str[4], reg->descricaoCrime);  //copio o valor no vetor de str
 
 	strcpy(nomes[5],"marcaCelular"); //copio o nome do campo

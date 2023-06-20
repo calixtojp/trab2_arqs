@@ -46,24 +46,28 @@ void create_index(){
     int cont = 0;//contador de registros lidos
     long int byteOffset_atual = getTamCabecalhoDados(arq_dados); //contador de byteOffset atual
     int tam_reg; //tamanho do registro lido
+    int qtd_leituras = get_nroRegTotal(arq_dados);
+
+    
 
     //Procura um registro válido para inserir na árvore e criar a raiz
     //como não se deve inserir registros removidos logicamente, procura-se um válido
-    do{
-        dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
-        cont++;
-    }while(!validaInfoDados(dado_inserir_arqDados));
+    if(qtd_leituras>0){//
+        do{
+            dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
+            cont++;
+        }while(cont < qtd_leituras && !validaInfoDados(dado_inserir_arqDados));
 
+        //mostrar_info_dados(dado_inserir_arqDados);
+        // printf("Insercao %d\n",cont+1);
+        //Inserir na árvore
+        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
+        byteOffset_atual += tam_reg;
+        insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
 
-    //mostrar_info_dados(dado_inserir_arqDados);
-
-    //Inserir na árvore
-    dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
-    byteOffset_atual += tam_reg;
-    insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
-
-    desalocar_InfoDados(dado_inserir_arqDados);
-    desalocar_InfoInserida(dado_inserir_arvore);
+        desalocar_InfoDados(dado_inserir_arqDados);
+        desalocar_InfoInserida(dado_inserir_arvore);
+    }
 
     //Agora, insiro na árvore usando a busca do processa registros.
 
@@ -71,9 +75,9 @@ void create_index(){
     FncAcoes *acoes = alocar_acoes();
     set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
 
-    int qtd_leituras = get_nroRegTotal(arq_dados);
     for(; cont < qtd_leituras; ++cont){
-        // if(cont >= 38){
+        // printf("Insercao %d\n",cont+1);
+        // if(cont >= 85){
         //     reiniciarCursorArvore(arvore);
         //     alterarStatusArvore(arvore, 1);
         //     escreverCabecalhoArvore(arvore);
@@ -94,6 +98,10 @@ void create_index(){
 
     }
 
+    //reescrevo o cabecalho da arvore agora com status consistente
+    reiniciarCursorArvore(arvore);
+    alterarStatusArvore(arvore,1);
+    escreverCabecalhoArvore(arvore); 
 
     //Fechar arquivos
     fechar_arvore(arvore);
@@ -249,6 +257,7 @@ void insert_into(){
 
     //Loop que faz as inserções usando a busca do processaRegistros
     for(int i=1; i<=qtdInserir; i++){
+        //printf("Insercao %d\n",i);
         //Ler os dados que serão inseridos.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);
 

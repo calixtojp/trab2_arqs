@@ -220,7 +220,7 @@ void setPonteiros(no_arvore_t *no, int *ponteiros, int ini_pont, int fim_pont){
     }
 
     //Se sobrarem ponteiros vazios no nó, completa-se com valores nulos
-    while(j<M){
+    while(j-ini_pont<M){
         (no->P)[j-ini_pont] = -1;
         j++;
     }
@@ -599,7 +599,7 @@ void redistribui_paginas(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_esq, 
     setPonteiros(pgn_esq->no, ponteiros_vet_temp, 0, meio);
 
     //6-Sobrescrevo os ponteiros da página à direita
-    setPonteiros(pgn_dir->no, ponteiros_vet_temp, meio, tam_ponteiros_vet_temp-1);
+    setPonteiros(pgn_dir->no, ponteiros_vet_temp, meio+1, tam_ponteiros_vet_temp-1);
 
     //7-Modifico a informação acerca da ocupação das páginas
     pgn_esq->no->n = meio;
