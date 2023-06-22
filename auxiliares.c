@@ -324,9 +324,12 @@ int busca_bin_rec(void *vetor, int ini, int fim, void *chave, FncComparacao comp
 }
 
 size_t meu_fwrite(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    //Função-mascara que faz o casting do tipo void* para const void*. Isso foi necessário para
+    //poder manter a coerência do ponteiro de função com o tipo definido do fread. 
     fwrite((const void*)__ptr, __size, __n, __s);
 }
 
 size_t meu_fread(void *__restrict__ __ptr, size_t __size, size_t __n, FILE *__restrict__ __s){
+    //Função que chama o fread. Foi criada para manter a coerência com o meu_fwrite().
     fread(__ptr, __size, __n, __s);
 }

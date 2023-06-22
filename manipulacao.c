@@ -20,8 +20,8 @@ struct Arvore{
     char nomeArqArvore[MAX_NOME_ARQ];
     FILE *arqArvore;
     cabecalho_arvore_t *cabecalhoArvore;
-    int M;
-    int tam_pagina;    
+    int M;//Ordem da árvore
+    int tam_pagina;//Tamanho de uma página de disco
 };
 
 struct InfoDados{
@@ -32,8 +32,6 @@ struct InfoDados{
 };
 
 ArqDados_t *alocar_arq_dados(void){
-    //Aloca o cabeçalho e o tipo ArqDados_t
-
     ArqDados_t *arq_dados_main;
     arq_dados_main = malloc(sizeof(ArqDados_t));
 
@@ -192,21 +190,24 @@ InfoDados_t *ler_criterios_busca(){
 }
 
 InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados, int *tam_reg){
-    InfoDados_t *info = alocar_InfoDados(6);
+    /*Função que obtem informações de um InfoDados_t com dados vindo do Stdin ou dados vindo de um arquivo de dados.*/
+
+    InfoDados_t *info = alocar_InfoDados(6);//Aloco o tipo que será retornado.
+
+    //Faço a leitura utilizando a forma de leitura utilizada e armazeno esses dados em um registro.
     dados_t *reg = alocar_dados();
     *tam_reg = metodoLeitura(reg, arq_dados->arqDados);
 
+    //Em seguida, passo os dados do registro para os vetores do InfoDados_t.
     regDados_para_vetores(reg, info->nomes, info->vals_int, info->vals_str);
 
     //Se o registro é removido, então a informação sobre esse registro é inválida,
     //portanto retorno o valor NULL para sinalizar isso.
-
     if(get_registro_removido(reg)){
         return NULL;
     }
 
     desalocar_registro(reg);
-
     return info;
 }
 
@@ -391,8 +392,6 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
         return;
     }
 
-    //Insiro o registro no arquivo árvore.
-
     //Se a árvore for vazia, crio um nó raiz
     if(get_nroNiveis(arvore->cabecalhoArvore) == 0){
         //configuro a nova altura da árvore
@@ -416,7 +415,8 @@ void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, v
             insere_ordenado_no(arvore->arqArvore, pgn_atual, info_inserir);
             
             //Já que consegui inserir ordenado no nó, garanto que não há promoção de chaves para os nós acima.
-            //Então devo indicar para os nós acima que a informação de inserção é inválida, pois já foi inserida nesse nó.
+            //Então devo indicar para os nós acima que a informação de inserção é inválida,
+            //pois já foi inserida nesse nó.
             info_inserir->valida = -1;
         }else{//Se a nova chave não cabe na página atual
             if(get_nivel_no(pgn_atual->no) == get_nroNiveis(arvore->cabecalhoArvore)){//Se estou inserindo no nó raiz
@@ -515,6 +515,9 @@ long int getProxByteOffSet(ArqDados_t *arq_dados){
 }
 
 InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados, long int byteOffset){
+    //Cria uma informação que será inserida na árvore a partir
+    // dos dados contidos no InfoDados_t e no byteOffSet passados como argumento.
+
     InfoInserida_t *inserida_retorno = alocar_InfoInserida();
     inserida_retorno->valida = 1;//Configuro como uma informação válida
     for(int i = 0; i < info_dados->qtd_crit; ++i){//Laço que acha o idCrime e escreve-o na chave_t.
@@ -565,11 +568,12 @@ void escreverCabecalhoDados(ArqDados_t *arq_dados){
     fwriteCabecalhoDados(arq_dados->arqDados, arq_dados->cabecalhoDados);
 }
 
-void escreverCabecalhoArvore(Arvore_t *arvore){
+void escreverCabecalhoArvore(Arvore_t *arvore){//Escreve o cabeçalho da árvore
     fluxo_CabecalhoArvore(arvore->arqArvore, arvore->cabecalhoArvore, meu_fwrite);
 }
 
 void setCabecalhoArvoreNulo(Arvore_t *arvore){
+    //Configura um cabeçalho como nulo - isto é, com valores respectivos a uma árvore vazia.
     set_noRaiz(arvore->cabecalhoArvore, -1);
     set_RRNproxNo(arvore->cabecalhoArvore, 0);
     set_nroNiveis(arvore->cabecalhoArvore, 0);

@@ -15,12 +15,11 @@ void create_index(){
 
     //Faz a leitura dos inputs
     ler_nome_arq_dados(arq_dados);
-    ignorar_palavra_stdin();
-    ignorar_palavra_stdin();
+    ignorar_palavra_stdin();//Devo ignorar a entrada, pois o campo indexado é sempre idCrime 
+    ignorar_palavra_stdin();//Devo ignorar a entrada, pois o tipo indexado será sempre 
     ler_nome_arvore(arvore);
 
-    //Com os inputs armazenados, faço 
-    //a abertura dos arquivos.
+    //Com os inputs armazenados, faço a abertura dos arquivos.
     abrir_arq_dados(arq_dados, "rb");
     iniciar_arvore(arvore, "w+b");
 
@@ -32,48 +31,50 @@ void create_index(){
         mensagem_erro();
     }
 
+    //Já que farei escritas no arquivo que contém a árvore, devo marcar esse arquivo como inconsistente.
     alterarStatusArvore(arvore, 0);
     setCabecalhoArvoreNulo(arvore);
     escreverCabecalhoArvore(arvore);
 
-
     //A primeira chave que vou inserir, deve ser feita manualmente, pois
-    //a busca do processaRegistros não pode ser executada em uma árvore vazia
+    //a busca do processaRegistros não pode ser executada em uma árvore vazia.
+    InfoDados_t *dado_inserir_arqDados;//Dados que serão lidos/inseridos.
+    InfoInserida_t *dado_inserir_arvore;//Dados que será inserido especificamente na árvore.
 
-    InfoDados_t *dado_inserir_arqDados;
-    InfoInserida_t *dado_inserir_arvore;
-
-    int cont = 0;//contador de registros lidos
+    int cont = 0;//Contador de registros lidos.
     long int byteOffset_atual = getTamCabecalhoDados(arq_dados); //contador de byteOffset atual
     int tam_reg; //tamanho do registro lido
-    int qtd_leituras = get_nroRegTotal(arq_dados);
+    int qtd_leituras = get_nroRegTotal(arq_dados);//leituras que serão realizadas no arquivo de dados. 
 
-    
-
-    //Procura um registro válido para inserir na árvore e criar a raiz
-    //como não se deve inserir registros removidos logicamente, procura-se um válido
-    if(qtd_leituras>0){//
+    //Procura um primeiro registro válido para inserir na árvore e criar a raiz
+    //como não se deve inserir registros removidos logicamente, procura-se um válido.
+    if(qtd_leituras>0){
         do{
+            //Devo armazenar o os dados de um registro (vindos pelo Stdin Ou pelo Arquivo de dados).
             dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
             cont++;
         }while(cont < qtd_leituras && !validaInfoDados(dado_inserir_arqDados));
 
-        //Inserir na árvore
+        //Inserir na árvore. Para isso, devo:
+        //-Criar o dado que será inserido na árvore (campo indexado e byteOffSet). 
         dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
+        //-Incrementar o cursor do byteOffSet atual.
         byteOffset_atual += tam_reg;
+        //-Inserir na árvore.
         insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
-
+        //-Desalocar as informações lidas.
         desalocar_InfoDados(dado_inserir_arqDados);
         desalocar_InfoInserida(dado_inserir_arvore);
     }
 
-    //Agora, insiro na árvore usando a busca do processa registros.
+    //Agora, insiro na árvore usando a busca do processaRegistros().
 
-    //Configuro a struct de ações para a inserção
+    //Configuro a struct de ações para a inserção. 
+    //Ou seja, com a ação de Branch insercao_arvore() e as demais nulas (Noops).
     FncAcoes *acoes = alocar_acoes();
     set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
 
-    for(; cont < qtd_leituras; ++cont){
+    for(; cont < qtd_leituras; ++cont){//Inicio o laço partindo do cont anterior e indo até qtd_leituras.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
         if(validaInfoDados(dado_inserir_arqDados)){
             //se o registro é válido, então insiro no árvore
@@ -84,10 +85,9 @@ void create_index(){
             desalocar_InfoInserida(dado_inserir_arvore);
         }
         byteOffset_atual += tam_reg;
-
     }
 
-    //reescrevo o cabecalho da arvore agora com status consistente
+    //reescrevo o cabecalho da arvore agora com status consistente e com os novos dados atualizados.
     reiniciarCursorArvore(arvore);
     alterarStatusArvore(arvore,1);
     escreverCabecalhoArvore(arvore); 
@@ -110,7 +110,7 @@ void where(void){
     erro(arq_dados);
     Arvore_t *arvore = alocar_arvore();
     erro(arvore);
-    int n;
+    int n;//número de buscas que serão realizadas
 
     //Faz a leitura dos inputs
     ler_nome_arq_dados(arq_dados);
@@ -134,11 +134,11 @@ void where(void){
         mensagem_erro();
     }
 
-    /*Declaro a struct com todas as ações necessárias para essa funcionalidade. 
+    /*Configuro a struct com todas as ações necessárias para essa funcionalidade. 
     Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
-
     FncAcoes *acoes = alocar_acoes();
     set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoBranch, achouReg);
+    
     //Loop que faz n buscas
     for(int i=1; i<=n; i++){
         printf("Resposta para a busca %d\n",i);
@@ -146,16 +146,12 @@ void where(void){
         //Ler os critérios de busca
         InfoDados_t *criterios = ler_criterios_busca();
 
-        /*Processar o registro usando a ação 'printa_busca'
-        e o final 'achouReg', que diz se o registro é inexistente, 
-        caso nenhum satisfaça os critérios de busca*/
-        
-        //MUDAR
         processaRegistros(arq_dados,arvore,criterios,acoes, NULL);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
     }
+    
     //Fechar arquivos
     fechar_arvore(arvore);
     fechar_arq_dados(arq_dados);

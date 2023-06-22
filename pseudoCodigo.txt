@@ -61,4 +61,20 @@ key insercao(RRN_anterior, RRN_atual, key_inserir):
             return insere_atual(RRN_anterior, RRN_atual, temp_key)
 
 
-inser
+===VIDEO===
+
+Tópido pra falar no vídeo:
+    - estrutura dos arquivos
+    - a struct de ações
+    - o processaRegistros()
+    - buscaArvoreRec
+    - busca_bin_no
+    - as ações realizadas
+    - insercao()
+    - insere_ordenado()
+    - split_1_para_2()
+    - redistribuicao()
+    - split_2_para_3()
+    - bubbleUp da recurcao
+
+===========

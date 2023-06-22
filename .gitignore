@@ -3,6 +3,8 @@
 *.in
 *.out
 *.zip
+*.csv
+*.txt
 /.vscode
 /casos_de_teste
 /arquivos
@@ -15,3 +17,13 @@ testes2.c
 teste.c
 teste
 teste.o
+/teste
+/output
+/arquivos_trabalho_introdutorio-master
+artu
+binario
+binarioNaTela.c
+intro
+lerarvore
+lerdados
+lerarvore.c

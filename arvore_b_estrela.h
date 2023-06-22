@@ -12,7 +12,7 @@
         int RRN_no;
     }pagina_t;
 
-    typedef struct InfoInserida{//Struct auxiliar
+    typedef struct InfoInserida{//Struct auxiliar que resume uma informação inserida na árvore.
         int valida;//flag que indica se há uma informação válida dentro dessa struct
         chave_t *chave;
         int *ponteiro;
