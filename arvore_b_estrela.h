@@ -26,6 +26,7 @@
 
     typedef int (*FncGetRRNirma) (int, no_arvore_t*);//funções que indicam qual irmã está sendo retornada (esquerda ou direita).
     typedef size_t (*FncFluxoMemSec) (void*, size_t, size_t, FILE*);//funções de fluxo com a memória secundária (fread/fwrite)
+    typedef void (*FncInsereNo) (no_arvore_t *, int, void *, int);
 
     //Funções de alocar/desalocar
     InfoInserida_t *alocar_InfoInserida(void);
