@@ -12,7 +12,6 @@
 	typedef struct Dados dados_t;	
 
 	cabecalho_t *alocar_cabecalho_dados();
-	void mostrar_cabecalho_dados(cabecalho_t *cabecalho);
 	dados_t *alocar_dados();
 	dados_t **alocar_vet_dados(int n);
 	void desalocar_vet_dados(dados_t **vetor, int n);

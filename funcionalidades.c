@@ -39,7 +39,9 @@ void create_index(){
     //A primeira chave que vou inserir, deve ser feita manualmente, pois
     //a busca do processaRegistros não pode ser executada em uma árvore vazia.
     InfoDados_t *dado_inserir_arqDados;//Dados que serão lidos/inseridos.
-    InfoInserida_t *dado_inserir_arvore;//Dados que será inserido especificamente na árvore.
+
+    //Configuro a árvore e o arquivo de dados para a inserção.
+    configuraInsercao(arq_dados, arvore);
 
     int cont = 0;//Contador de registros lidos.
     long int byteOffset_atual = getTamCabecalhoDados(arq_dados); //contador de byteOffset atual
@@ -53,36 +55,43 @@ void create_index(){
             //Devo armazenar o os dados de um registro (vindos pelo Stdin Ou pelo Arquivo de dados).
             dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
             cont++;
+
+            //-Incrementar o cursor do byteOffSet atual.
+            byteOffset_atual += tam_reg;
+
         }while(cont < qtd_leituras && !validaInfoDados(dado_inserir_arqDados));
 
         //Inserir na árvore. Para isso, devo:
-        //-Criar o dado que será inserido na árvore (campo indexado e byteOffSet). 
-        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
-        //-Incrementar o cursor do byteOffSet atual.
+        /*-Incrementar o cursor do byteOffSet atual, pois atualmente ele está no começo 
+        do próximo registro, mas quero que ele esteja no começo daquele que vou escrever*/
+        byteOffset_atual -= tam_reg;
+        
+        cria_raiz(arq_dados, arvore, byteOffset_atual, dado_inserir_arqDados);
+
+        //- Voltar o cursor para o início do próximo registro
         byteOffset_atual += tam_reg;
-        //-Inserir na árvore.
-        insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
+        
         //-Desalocar as informações lidas.
         desalocar_InfoDados(dado_inserir_arqDados);
-        desalocar_InfoInserida(dado_inserir_arvore);
     }
 
     //Agora, insiro na árvore usando a busca do processaRegistros().
 
-    //Configuro a struct de ações para a inserção. 
-    //Ou seja, com a ação de Branch insercao_arvore() e as demais nulas (Noops).
-    FncAcoes *acoes = alocar_acoes();
-    set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
+    /*
+    MUDAR:
+    - COLOCAR AS AÇÕES DENTRO DA ARVORE, CRIANDO UM PREPARA PARA INSERIR/BUSCAR
+    - CRIAR UM INSERE_ARVORE_VAZIA(), QUE É O criar_InfoInserida() + O IF DO insercao_arvore()
+    - CRIAR UM INSERE_ARVORE_PELOMENOSUM() QUE É O CRIAR INFO INSERIDA + PROCESSA REGISTROS COM
+    AS AÇÕES SETADAS PELO PREPARA PARA INSERIR, SENDO QUE A AÇÃO DE INSERÇÃO AGORA É SÓ O ELSE.
+    */
 
     for(; cont < qtd_leituras; ++cont){//Inicio o laço partindo do cont anterior e indo até qtd_leituras.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
         if(validaInfoDados(dado_inserir_arqDados)){
             //se o registro é válido, então insiro no árvore
-            dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset_atual);
-            processaRegistros(arq_dados,arvore,dado_inserir_arqDados,acoes,dado_inserir_arvore);
+            insercao_arvore(arq_dados, arvore, byteOffset_atual, dado_inserir_arqDados);
 
             desalocar_InfoDados(dado_inserir_arqDados);
-            desalocar_InfoInserida(dado_inserir_arvore);
         }
         byteOffset_atual += tam_reg;
     }
@@ -136,9 +145,8 @@ void where(void){
 
     /*Configuro a struct com todas as ações necessárias para essa funcionalidade. 
     Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
-    FncAcoes *acoes = alocar_acoes();
-    set_acoes(acoes, validaPrinta, printa_busca, NoOpAcaoBranch, achouReg);
-    
+    configuraBusca(arq_dados, arvore);
+
     //Loop que faz n buscas
     for(int i=1; i<=n; i++){
         printf("Resposta para a busca %d\n",i);
@@ -146,12 +154,12 @@ void where(void){
         //Ler os critérios de busca
         InfoDados_t *criterios = ler_criterios_busca();
 
-        processaRegistros(arq_dados,arvore,criterios,acoes, NULL);
+        buscaRegistro(arq_dados, arvore, criterios);
 
         //Desalocar crtérios de busca    	
         desalocar_InfoDados(criterios);
     }
-    
+
     //Fechar arquivos
     fechar_arvore(arvore);
     fechar_arq_dados(arq_dados);
@@ -159,7 +167,6 @@ void where(void){
     //Desalocar tipos utilizados
     desalocar_ArqDados(arq_dados);
     desalocar_Arvore(arvore);
-    desalocar_acoes(acoes);
 }
 
 //Funcionalidade [10]
@@ -206,11 +213,9 @@ void insert_into(){
     int qtdInserir;
     scanf(" %d", &qtdInserir);
 
-    FncAcoes *acoes = alocar_acoes();
-    set_acoes(acoes, NoOpAcaoRegArv, NoOpAcaoRegSeq, insercao_arvore, NoOpAcaoFinal);
+    configuraInsercao(arq_dados, arvore);
 
     InfoDados_t *dado_inserir_arqDados;
-    InfoInserida_t *dado_inserir_arvore;
 
     int tam_reg; //tamanho do registro lido
     long int byteOffset; //guarda o byteOffset do registro que vou inserir
@@ -227,11 +232,9 @@ void insert_into(){
 
         //Inserir na árvore
         byteOffset = getProxByteOffSet(arq_dados);
-        dado_inserir_arvore = criar_InfoInserida(arq_dados,dado_inserir_arqDados,byteOffset);
-        insercao_arvore(arvore, NULL, NULL, dado_inserir_arvore);
+        cria_raiz(arq_dados, arvore, byteOffset, dado_inserir_arqDados);
 
         desalocar_InfoDados(dado_inserir_arqDados);
-        desalocar_InfoInserida(dado_inserir_arvore);
 
         /*Reduzo em 1 a quantidade que deve ser inserida, 
         para que o loop de inserções não execute uma vez a mais*/
@@ -248,15 +251,11 @@ void insert_into(){
         insercao_arqDados(arq_dados, dado_inserir_arqDados);
 
         //Inserir na árvore
-        dado_inserir_arvore = criar_InfoInserida(arq_dados, dado_inserir_arqDados,byteOffset);
-        processaRegistros(arq_dados, arvore, dado_inserir_arqDados, acoes, dado_inserir_arvore);
+        insercao_arvore(arq_dados, arvore, byteOffset, dado_inserir_arqDados);
 
         //Desalocar crtérios de busca
         desalocar_InfoDados(dado_inserir_arqDados);
-        desalocar_InfoInserida(dado_inserir_arvore);
     }
-
-    desalocar_acoes(acoes);
 
     //Reescrevo o cabeçalho do arquivo de dados, pois, além do status, alterei o campo de registros totais
     reiniciarCursorDados(arq_dados);

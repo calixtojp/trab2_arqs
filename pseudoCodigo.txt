@@ -36,22 +36,6 @@ key insercao(RRN_anterior, RRN_inserir, key_inserir):
                 return spli_2_para_3
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 key insercao(RRN_anterior, RRN_atual, key_inserir):
     if sou_folha:
         return insere_atual(RRN_anterior, RRN_atual, key_inserir)
@@ -63,7 +47,7 @@ key insercao(RRN_anterior, RRN_atual, key_inserir):
 
 ===VIDEO===
 
-Tópido pra falar no vídeo:
+Tópicos pra falar no vídeo:
     - estrutura dos arquivos
     - a struct de ações
     - o processaRegistros()
@@ -77,4 +61,30 @@ Tópido pra falar no vídeo:
     - split_2_para_3()
     - bubbleUp da recurcao
 
+Roteiro:
+    - estrutura dos arquivos
+        - ArqDados_t
+            - acoes
+        - Arvore_t
+            - acoes
+
+    - busca
+        - sequencial
+            - acoes sequencial
+        - arvore
+            - acoes arvore
+        
+    - insercao
+        - acao de branch
+        - insere_arvore
+            - insere_ordenado()
+            - split_1_para_2()
+            - redistribuicao()
+            - split_2_para_3()
+            
+
+
+
+
 ===========
+

@@ -24,18 +24,23 @@ typedef void (*FncAcaoBranch) (Arvore_t*,pagina_t*,pagina_t*,void*);
 typedef long int (*FncGetByteOffSet) (void*, int);
 typedef int (*FncCampoNulo) (void*);
 
-//registro de ações a serem executadas dependendo da funcionalidade
-typedef struct acoes{    
-    FncAcaoRegArv reg_arvore; //ação que atua sobre um registro encontrado a partir da busca na árvore B*
-    FncAcaoRegSeq reg_seq; //ação que atua sobre um registro encontrado a partir da busca sequencial
-    FncAcaoBranch no; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
+//registros de ações a serem executadas dependendo da funcionalidade
+typedef struct acoes_arq_dados{
+    FncAcaoRegSeq reg; //ação que atua sobre um registro encontrado a partir da busca sequencial
     FncAcaoFinal final; //Ação executada depois das ações principais
-}FncAcoes;
+}FncAcoesArqDados;
+
+typedef struct acoes_arvore{
+    FncAcaoRegArv reg; //ação que atua sobre um registro encontrado a partir da busca na árvore B*
+    FncAcaoBranch branch; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
+}FncAcoesArvore;
 
 
 /*--------------------------------Alocações------------------------------------*/
 ArqDados_t *alocar_arq_dados(void);
 Arvore_t *alocar_arvore(void);
+void configuraInsercao(ArqDados_t *arq_dados, Arvore_t *arvore);
+void configuraBusca(ArqDados_t *arq_dados, Arvore_t *arvore);
 void ler_nome_arq_dados(ArqDados_t *arq_dados);
 void ler_nome_arvore(Arvore_t *arvore);
 void abrir_arq_dados(ArqDados_t *arq_dados, const char *tipo_leitura);
@@ -58,7 +63,7 @@ int get_nroRegValidos(ArqDados_t *arq_dados);
 InfoDados_t *ler_criterios_busca();
 InfoDados_t *alocar_InfoDados(int qtd_crit);
 void desalocar_InfoDados(InfoDados_t *informacao);
-void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, FncAcoes *acoes, void *info_aux);
+void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, void *info_aux);
 int testarStatusArvore(Arvore_t *arvore);
 int testarStatusDados(ArqDados_t *arq_dados);
 void reiniciarCursorDados(ArqDados_t *arq_dados);
@@ -72,11 +77,7 @@ char *getNomeArqDados(ArqDados_t *arq_dados);
 char *getNomeArvore(Arvore_t *arvore);
 int arvore_vazia(Arvore_t *arvore);
 
-
 /*------------------------------------------AÇÕES---------------------------------*/
-FncAcoes *alocar_acoes();
-void desalocar_acoes(FncAcoes *acoes);
-void set_acoes(FncAcoes *acoes, FncAcaoRegArv reg_arvore, FncAcaoRegSeq reg_seq, FncAcaoBranch no, FncAcaoFinal final);
 
 void validaPrinta(ArqDados_t *arq_dados, InfoDados_t *criterios, long int byteOffset);
 void NoOpAcaoRegArv(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignorar3);
@@ -89,10 +90,13 @@ void achouReg(int flag);
 
 void NoOpAcaoFinal(int ignorar);
 
-void insercao_arvore(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux);
+void insercao_branch(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux);
 
 /*------------------------------------------DEMAIS FUNÇÕES---------------------------------*/
+void cria_raiz(ArqDados_t *arq_dados, Arvore_t *arvore, long int byteOffSet, InfoDados_t *info_dados_inserir);
 void insercao_arqDados(ArqDados_t *arq_dados, InfoDados_t *info_inserir);
+void insercao_arvore(ArqDados_t *arq_dados, Arvore_t *arvore, long int byteOffSet, InfoDados_t *info_dados_inserir);
+void buscaRegistro(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios);
 InfoInserida_t *criar_InfoInserida(ArqDados_t *arq_dados, InfoDados_t *info_dados, long int byteOffset);
 void mostrar_info_dados(InfoDados_t *criterios);
 InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados, int *tam_reg);
