@@ -31,24 +31,33 @@ void create_index(){
         mensagem_erro();
     }
 
-    //Já que farei escritas no arquivo que contém a árvore, devo marcar esse arquivo como inconsistente.
+    //Já que farei escritas no arquivo que contém a árvore
+    //, devo marcar esse arquivo como inconsistente.
     alterarStatusArvore(arvore, 0);
     setCabecalhoArvoreNulo(arvore);
     escreverCabecalhoArvore(arvore);
 
     //A primeira chave que vou inserir, deve ser feita manualmente, pois
     //a busca do processaRegistros não pode ser executada em uma árvore vazia.
+
     InfoDados_t *dado_inserir_arqDados;//Dados que serão lidos/inseridos.
 
     //Configuro a árvore e o arquivo de dados para a inserção.
     configuraInsercao(arq_dados, arvore);
 
-    int cont = 0;//Contador de registros lidos.
-    long int byteOffset_atual = getTamCabecalhoDados(arq_dados); //contador de byteOffset atual
-    int tam_reg; //tamanho do registro lido
-    int qtd_leituras = get_nroRegTotal(arq_dados);//leituras que serão realizadas no arquivo de dados. 
+    int cont = 0;
+    //Contador de registros lidos.
 
-    //Procura um primeiro registro válido para inserir na árvore e criar a raiz
+    long int byteOffset_atual = getTamCabecalhoDados(arq_dados); 
+    //contador de byteOffset atual
+
+    int tam_reg; 
+    //tamanho do registro lido
+
+    int qtd_leituras = get_nroRegTotal(arq_dados);
+    //leituras que serão realizadas no arquivo de dados. 
+
+    //Procuro um primeiro registro válido para inserir na árvore e criar a raiz
     //como não se deve inserir registros removidos logicamente, procura-se um válido.
     if(qtd_leituras>0){
         do{
@@ -75,17 +84,10 @@ void create_index(){
         desalocar_InfoDados(dado_inserir_arqDados);
     }
 
-    //Agora, insiro na árvore usando a busca do processaRegistros().
+    //Agora, insiro os demais registros na árvore usando a busca a função de insercao_arvore().
 
-    /*
-    MUDAR:
-    - COLOCAR AS AÇÕES DENTRO DA ARVORE, CRIANDO UM PREPARA PARA INSERIR/BUSCAR
-    - CRIAR UM INSERE_ARVORE_VAZIA(), QUE É O criar_InfoInserida() + O IF DO insercao_arvore()
-    - CRIAR UM INSERE_ARVORE_PELOMENOSUM() QUE É O CRIAR INFO INSERIDA + PROCESSA REGISTROS COM
-    AS AÇÕES SETADAS PELO PREPARA PARA INSERIR, SENDO QUE A AÇÃO DE INSERÇÃO AGORA É SÓ O ELSE.
-    */
-
-    for(; cont < qtd_leituras; ++cont){//Inicio o laço partindo do cont anterior e indo até qtd_leituras.
+    //Inicio o laço partindo do cont anterior e indo até qtd_leituras.
+    for(; cont < qtd_leituras; ++cont){
         dado_inserir_arqDados = ler_dados_registro(lerRegDoArqDados, arq_dados, &tam_reg);
         if(validaInfoDados(dado_inserir_arqDados)){
             //se o registro é válido, então insiro no árvore
@@ -136,15 +138,15 @@ void where(void){
     ler_cabecalho_arvore(arvore);
     ler_cabecalho_dados(arq_dados);
 
-    //Testo se os dois arquivos estao consistentes. Se não estão, encerro o programa com uma mensagem de erro.
+    //Testo se os dois arquivos estao consistentes. 
+    //Se não estão, encerro o programa com uma mensagem de erro.
     if(testarStatusArvore(arvore)==0){
         mensagem_erro();
     }else if(testarStatusDados(arq_dados)==0){
         mensagem_erro();
     }
 
-    /*Configuro a struct com todas as ações necessárias para essa funcionalidade. 
-    Se algum tipo não for necessário, passo uma função NoOp daquele tipo.*/
+    /*Configuro a struct com todas as ações necessárias para essa funcionalidade.*/
     configuraBusca(arq_dados, arvore);
 
     //Loop que faz n buscas
@@ -191,7 +193,8 @@ void insert_into(){
     ler_cabecalho_arvore(arvore);
     ler_cabecalho_dados(arq_dados);
 
-    //Testo se os dois arquivos estao consistentes. Se não estão, encerro o programa com uma mensagem de erro.
+    //Testo se os dois arquivos estao consistentes.
+    //Se não estão, encerro o programa com uma mensagem de erro.
     if(testarStatusArvore(arvore)==0){
         mensagem_erro();
     }else if(testarStatusDados(arq_dados)==0){
@@ -221,7 +224,7 @@ void insert_into(){
     long int byteOffset; //guarda o byteOffset do registro que vou inserir
     
     if(arvore_vazia(arvore)){
-        //Se a árvore está vazia, então a busca executada pelo processaRegistros não pode ser efetuada.
+        //Se a árvore está vazia, então a função insercao_arvore() não pode ser efetuada.
         //Desse modo, a inserção deve ser feita de maneira manual.
 
         //Ler os dados que serão inseridos.
@@ -230,7 +233,7 @@ void insert_into(){
         //Inserir no arquivo de dados
         insercao_arqDados(arq_dados, dado_inserir_arqDados);
 
-        //Inserir na árvore
+        //Realizar a inserção específica para árvore vazia.
         byteOffset = getProxByteOffSet(arq_dados);
         cria_raiz(arq_dados, arvore, byteOffset, dado_inserir_arqDados);
 
@@ -241,7 +244,7 @@ void insert_into(){
         qtdInserir--;
     }
 
-    //Loop que faz as inserções usando a busca do processaRegistros
+    //Loop que faz as inserções usando a inserção para árvores não vazias (insercao_arvore()).
     for(int i=1; i<=qtdInserir; i++){
         //Ler os dados que serão inseridos.
         dado_inserir_arqDados = ler_dados_registro(lerRegDoStdin,arq_dados, &tam_reg);

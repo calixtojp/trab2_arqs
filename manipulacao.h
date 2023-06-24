@@ -1,12 +1,3 @@
-/*
-        Biblioteca que utiliza as ferramentas fornecidas
-    nas bibliotecas de manipulação dos arquivos de
-    Índice e de Dados para manipula-los.
-        Essa manipulação ocorre através dos tipos ArqDados
-    (referente ao arquivo de dados) e o tipo ArqIndex (referente)
-    ao arquivo de Index
-*/
-
 #ifndef _MANIPULACAO
 #define _MANIPULACAO
 
@@ -21,8 +12,7 @@ typedef void (*FncAcaoRegSeq) (dados_t*);
 typedef void (*FncAcaoRegArv) (ArqDados_t*, InfoDados_t*, long int);
 typedef void (*FncAcaoFinal) (int);
 typedef void (*FncAcaoBranch) (Arvore_t*,pagina_t*,pagina_t*,void*);
-typedef long int (*FncGetByteOffSet) (void*, int);
-typedef int (*FncCampoNulo) (void*);
+typedef int (*FncMetodoLeitura) (dados_t*, FILE*);
 
 //registros de ações a serem executadas dependendo da funcionalidade
 typedef struct acoes_arq_dados{
@@ -35,28 +25,26 @@ typedef struct acoes_arvore{
     FncAcaoBranch branch; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
 }FncAcoesArvore;
 
-
 /*--------------------------------Alocações------------------------------------*/
 ArqDados_t *alocar_arq_dados(void);
 Arvore_t *alocar_arvore(void);
+void desalocar_ArqDados(ArqDados_t *arq_dados);
+void desalocar_Arvore(Arvore_t *arvore);
 void configuraInsercao(ArqDados_t *arq_dados, Arvore_t *arvore);
 void configuraBusca(ArqDados_t *arq_dados, Arvore_t *arvore);
 void ler_nome_arq_dados(ArqDados_t *arq_dados);
 void ler_nome_arvore(Arvore_t *arvore);
 void abrir_arq_dados(ArqDados_t *arq_dados, const char *tipo_leitura);
 void iniciar_arvore(Arvore_t *arvore, const char *tipo_leitura);
-void desalocar_ArqDados(ArqDados_t *arq_dados);
-void desalocar_Arvore(Arvore_t *arvore);
 void fechar_arq_dados(ArqDados_t *arq_dados);
 void fechar_arvore(Arvore_t *arvore);
+
+/*----------------------------Gets, Sets e escritas/leituras -----------------------------------*/
 void ler_cabecalho_dados(ArqDados_t *arq_dados);
 void ler_cabecalho_arvore(Arvore_t *arvore);
 void escreverCabecalhoDados(ArqDados_t *arq_dados);
 void escreverCabecalhoArvore(Arvore_t *arvore);
 void setCabecalhoArvoreNulo(Arvore_t *arvore);
-int validaInfoDados(InfoDados_t *info);
-
-/*----------------------------Gets, Sets e escritas/leituras -----------------------------------*/
 int getTamCabecalhoDados(ArqDados_t *arq_dados);
 int get_nroRegTotal(ArqDados_t *arq_dados);
 int get_nroRegValidos(ArqDados_t *arq_dados);
@@ -85,14 +73,14 @@ void NoOpAcaoRegArv(ArqDados_t *ignorar1, InfoDados_t *ignorar2, long int ignora
 void printa_busca(dados_t *registro);
 void NoOpAcaoRegSeq(dados_t *ignorar1);
 
-void NoOpAcaoBranch(Arvore_t *ignorar1, pagina_t *ignorar2, pagina_t *ignorar3, void *ignorar4);
+void NoOpAcaoFinal(int ignorar);
 void achouReg(int flag);
 
-void NoOpAcaoFinal(int ignorar);
-
 void insercao_branch(Arvore_t *arvore, pagina_t *pgn_mae, pagina_t *pgn_atual, void *info_aux);
+void NoOpAcaoBranch(Arvore_t *ignorar1, pagina_t *ignorar2, pagina_t *ignorar3, void *ignorar4);
 
 /*------------------------------------------DEMAIS FUNÇÕES---------------------------------*/
+int validaInfoDados(InfoDados_t *info);
 void cria_raiz(ArqDados_t *arq_dados, Arvore_t *arvore, long int byteOffSet, InfoDados_t *info_dados_inserir);
 void insercao_arqDados(ArqDados_t *arq_dados, InfoDados_t *info_inserir);
 void insercao_arvore(ArqDados_t *arq_dados, Arvore_t *arvore, long int byteOffSet, InfoDados_t *info_dados_inserir);
@@ -102,7 +90,6 @@ void mostrar_info_dados(InfoDados_t *criterios);
 InfoDados_t *ler_dados_registro(int(*metodoLeitura)(dados_t *, FILE *), ArqDados_t *arq_dados, int *tam_reg);
 int lerRegDoArqDados(dados_t *reg, FILE *arq);
 int lerRegDoStdin(dados_t *reg, FILE *arq);
-long int getByteOffSetAtual(ArqDados_t *arq_dados);
 long int getProxByteOffSet(ArqDados_t *arq_dados);
 
 #endif
