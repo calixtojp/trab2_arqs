@@ -14,17 +14,6 @@ typedef void (*FncAcaoFinal) (int);
 typedef void (*FncAcaoBranch) (Arvore_t*,pagina_t*,pagina_t*,void*);
 typedef int (*FncMetodoLeitura) (dados_t*, FILE*);
 
-//registros de ações a serem executadas dependendo da funcionalidade
-typedef struct acoes_arq_dados{
-    FncAcaoRegSeq reg; //ação que atua sobre um registro encontrado a partir da busca sequencial
-    FncAcaoFinal final; //Ação executada depois das ações principais
-}FncAcoesArqDados;
-
-typedef struct acoes_arvore{
-    FncAcaoRegArv reg; //ação que atua sobre um registro encontrado a partir da busca na árvore B*
-    FncAcaoBranch branch; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
-}FncAcoesArvore;
-
 /*--------------------------------Alocações------------------------------------*/
 ArqDados_t *alocar_arq_dados(void);
 Arvore_t *alocar_arvore(void);

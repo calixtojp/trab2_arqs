@@ -10,6 +10,18 @@
 #define TAM_MAX_NOME 100
 #define TAM_MAX_VALOR 100
 #define campoIndexado "idCrime"
+
+//registros de ações a serem executadas dependendo da funcionalidade
+typedef struct acoes_arq_dados{
+    FncAcaoRegSeq reg; //ação que atua sobre um registro encontrado a partir da busca sequencial
+    FncAcaoFinal final; //Ação executada depois das ações principais
+}FncAcoesArqDados;
+
+typedef struct acoes_arvore{
+    FncAcaoRegArv reg; //ação que atua sobre um registro encontrado a partir da busca na árvore B*
+    FncAcaoBranch branch; //Ação que atua sobre um branch (isto é, um nó e todos os seus descendentes) da árvore B*
+}FncAcoesArvore;
+
 struct ArqDados{
     char nomeArqDados[MAX_NOME_ARQ];//guarda o nome do arquivo de dados
     FILE *arqDados;
@@ -252,9 +264,9 @@ InfoDados_t *ler_dados_registro(FncMetodoLeitura metodoLeitura, ArqDados_t *arq_
 void mostrar_info_dados(InfoDados_t *criterios){
     for(int i=0; i<criterios->qtd_crit; ++i){
         printf("%s: str:%s | int:%d\n",
-         criterios->nomes[i],
-         criterios->vals_str[i],
-         criterios->vals_int[i]
+            criterios->nomes[i],
+            criterios->vals_str[i],
+            criterios->vals_int[i]
         );
     }
 }
@@ -267,7 +279,7 @@ void desalocar_InfoDados(InfoDados_t *informacao){
 }
 
 int testarStatusArvore(Arvore_t *arvore){
-	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
+	//Função que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
     if(getStatusArvore(arvore->cabecalhoArvore) == '1'){
         return 1;
     }
@@ -275,7 +287,7 @@ int testarStatusArvore(Arvore_t *arvore){
 }
 
 int testarStatusDados(ArqDados_t *arq_dados){
-	//funcao que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
+	//Função que retorna 1 caso o arquivo esteja consistente e 0 caso esteja inconsistente
 	if(getStatusDados(arq_dados->cabecalhoDados) == '1'){
 		return 1;
 	}
@@ -342,7 +354,7 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
         //Realizo a ação sobre o nó encontrado, na volta da recursão.
         arvore->acoesArvore->branch(arvore, pgn_mae, pgn_atual, info_aux);
     }else{
-        //Se encontrou, retorno o byteOffset
+        //Se encontrou, realizo uma ação sobre esse registro
         arvore->acoesArvore->reg(arq_dados, criterios, Pr);
     }
 
@@ -350,7 +362,7 @@ void buscaArvoreRec(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criter
 }
 
 void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit,
-                                                         InfoDados_t *criterios, void *info_aux){
+                                                        InfoDados_t *criterios, void *info_aux){
 
     //Função que realiza a busca por um registro que contém os critérios do argumento da função.
     //A função faz isso chamando a sua equivalente recursiva inicialmente com o nó raiz.
@@ -359,7 +371,7 @@ void buscaArvore(ArqDados_t *arq_dados, Arvore_t *arvore, int pos_crit,
 
     //chamo a função recursiva de busca na árvore B*, a partir do nó raiz
     buscaArvoreRec(arq_dados, arvore, criterios, info_aux,
-     criterios->vals_int[pos_crit], NULL, RRN_raiz);
+    criterios->vals_int[pos_crit], NULL, RRN_raiz);
 }
 
 void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterios){
@@ -403,7 +415,7 @@ void buscaSeqDados(ArqDados_t *arq_dados, Arvore_t *arvore,InfoDados_t *criterio
 
 void processaRegistros(ArqDados_t *arq_dados, Arvore_t *arvore, InfoDados_t *criterios, void *info_aux){
     /*Funcao que define se a busca sera binaria na arvore B* ou sequencial no arquivo de dados
-    e encontra os registros. Depois, usa a FncAcao acao, e a FncFinaliza final para processá-los.*/
+    e encontra os registros. Depois, usa as ações da árvore ou do arquivo de dados para processá-los.*/
 
     int posicao_criterio = busca_por_indexado(criterios);
     
@@ -626,7 +638,7 @@ void NoOpAcaoRegSeq(dados_t *ignorar1){
     //função do tipo FncAcaoRegSeq que não faz nada, para os casos em que funções desse tipo não serão usadas
 }
 
-/*---------------------------------------DEMAIS FUNÇÕEs-------------------------------------------*/
+/*---------------------------------------DEMAIS FUNÇÕES-------------------------------------------*/
 long int getProxByteOffSet(ArqDados_t *arq_dados){ 
     //Função que permite que o 'funcionalidades.c' acesse uma função do 'arq_dados.c'.
     return get_proxByteOffset(arq_dados->cabecalhoDados);

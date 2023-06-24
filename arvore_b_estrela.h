@@ -26,8 +26,10 @@ typedef enum result_redistribuicao{
 
 //funções que indicam qual irmã está sendo retornada (esquerda ou direita).
 typedef int (*FncGetRRNirma) (int, no_arvore_t*);
+
 //funções de fluxo com a memória secundária (fread/fwrite)
 typedef size_t (*FncFluxoMemSec) (void*, size_t, size_t, FILE*);
+
 typedef void (*FncInsereNo) (no_arvore_t *, int, void *, int);
 
 //Funções de alocar/desalocar
@@ -72,6 +74,7 @@ void fluxo_chave_no(FILE *arqArvore, no_arvore_t *no, int pos_vet_chaves, FncFlu
 void fluxo_no(FILE *arqArvore, no_arvore_t *no_operar, FncFluxoMemSec funcFluxo);
 
 //Demais funções
+int ehFolha(pagina_t *pgn_atual);
 long long int buscaBinNo(no_arvore_t *no_atual, int ini, int fim, int chave, int *P);
 void insere_ordenado_no(FILE *arq, pagina_t *pgn, InfoInserida_t *info);
 result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagina_t *pgn_atual, 
@@ -79,6 +82,5 @@ result_redistribuicao_t redistribuicao(FILE *arqArvore, pagina_t *pgn_mae, pagin
 void split_1_para_2(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_atual, InfoInserida_t *info);
 void split_2_para_3(FILE *arqArvore, cabecalho_arvore_t *cabecalho, pagina_t *pgn_mae,
                                         pagina_t *pgn_esq, pagina_t *pgn_dir,InfoInserida_t *info);
-int ehFolha(pagina_t *pgn_atual);
 
 #endif

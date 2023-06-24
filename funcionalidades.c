@@ -31,14 +31,14 @@ void create_index(){
         mensagem_erro();
     }
 
-    //Já que farei escritas no arquivo que contém a árvore
-    //, devo marcar esse arquivo como inconsistente.
+    //Já que farei escritas no arquivo que contém a árvore,
+    //devo marcar esse arquivo como inconsistente.
     alterarStatusArvore(arvore, 0);
     setCabecalhoArvoreNulo(arvore);
     escreverCabecalhoArvore(arvore);
 
     //A primeira chave que vou inserir, deve ser feita manualmente, pois
-    //a busca do processaRegistros não pode ser executada em uma árvore vazia.
+    //devo criar a árvore para executar a função de busca utilizada na função insere_arvore()
 
     InfoDados_t *dado_inserir_arqDados;//Dados que serão lidos/inseridos.
 
