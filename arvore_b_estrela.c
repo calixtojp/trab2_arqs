@@ -28,12 +28,6 @@ struct no_arvore{
     chave_t chaves[M-1];
 };
 
-typedef struct temp_no{
-    int n;//quantidade de chaves no nó
-    chave_t *chaves;
-    int *ponteiros;
-}temp_no_t;
-
 InfoInserida_t *alocar_InfoInserida(void){
     InfoInserida_t *info_retorno = malloc(sizeof(InfoInserida_t));
     info_retorno->chave = alocar_chave();
@@ -116,18 +110,6 @@ void desaloca_vet_ponteiros(int *vet_ponteiros){
     free(vet_ponteiros);
 }
 
-temp_no_t *aloca_temp_no(int n_chaves, int n_ponteiros){
-    temp_no_t *no_retorno = malloc(sizeof(temp_no_t));
-    no_retorno->n = n_chaves;//número de chaves no nó
-    no_retorno->chaves = aloca_vet_chaves(n_chaves);
-    no_retorno->ponteiros = aloca_vet_ponteiros(n_ponteiros);
-}
-
-void desaloca_temp_no(temp_no_t *no){
-    desaloca_vet_chaves(no->chaves);
-    desaloca_vet_ponteiros(no->ponteiros);
-    free(no);
-}
 chave_t *alocar_chave(){
     chave_t *chave = malloc(sizeof(chave_t));
     return chave;
@@ -137,8 +119,8 @@ void desalocar_chave(chave_t *chave){
     free(chave);
 }
 
-
 void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho){
+    //Função de debug
     printf("Cabeçalho da arvore: \n");
     printf("status=%c|noRaiz=%d|RRNproxNo=%d|nroNiveis=%d|nroChaves=%d\n"
         , cabecalho->status
@@ -150,6 +132,7 @@ void mostra_cabecalho_arvore(cabecalho_arvore_t *cabecalho){
 }
 
 void mostra_vet_ponteiros(int *ponteiros, int tam){
+    //Função de debud
     for(int i=0; i<tam; i++){
         printf("\tP%d:%d\n",i+1,ponteiros[i]);
     }
@@ -209,6 +192,7 @@ int get_noRaiz(cabecalho_arvore_t *cabecalho){
 }
 
 void insereChave(no_arvore_t *no, int pos1, void *chaves_param, int pos2){
+    //Função que insere uma chave em um nó em uma posição específica.
     chave_t *chaves = (chave_t *) chaves_param;
 
     if(chaves != NULL){
@@ -223,6 +207,8 @@ void insereChave(no_arvore_t *no, int pos1, void *chaves_param, int pos2){
 }
 
 void inserePonteiro(no_arvore_t *no, int pos1, void *pont_param, int pos2){
+    //Função que insere um ponteiro em um nó em uma posição específica.
+
     int *ponteiros = (int *) pont_param;
 
     if(ponteiros != NULL){
@@ -292,11 +278,12 @@ void set_nroNiveis(cabecalho_arvore_t *cabecalho, int nova_nroNiveis){
 }
 
 void fluxo_StatusArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
+    //Escreve ou lê o cabeçalho da árvore.
     funcFluxo(&cabecalho->status,sizeof(char),1,arqArvore);
 }
 
 void fluxo_CabecalhoArvore(FILE *arqArvore, cabecalho_arvore_t *cabecalho, FncFluxoMemSec funcFluxo){
-    //Função que faz escreve ou lê o cabecalho do arquivo da árvore B*, a dependeder do 'funcFluxo'
+    //Escreve ou lê o cabecalho do arquivo da árvore B*, a dependeder do 'funcFluxo'
     funcFluxo(&(cabecalho->status), sizeof(char), 1, arqArvore);
     funcFluxo(&(cabecalho->noRaiz), sizeof(int), 1, arqArvore);
     funcFluxo(&(cabecalho->RRNproxNo), sizeof(int), 1, arqArvore);    
@@ -479,6 +466,11 @@ void insere_ordenado_no(FILE *arq, pagina_t *pgn, InfoInserida_t *info){
 
     fseek(arq, ((pgn->RRN_no)+1)*TAM_PAGINA, SEEK_SET);
     fluxo_no(arq, pgn->no, meu_fwrite);
+
+    //Já que consegui inserir ordenado no nó, garanto que não há promoção de chaves para nós acima.
+    //Então devo indicar para os nós acima que a informação de inserção é inválida,
+    //pois já foi inserida nesse nó.
+    info->valida = -1;
 }
 
 int retorna_irma_esq(int pos_vet_P, no_arvore_t *no){
