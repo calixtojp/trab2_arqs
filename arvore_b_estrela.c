@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "auxiliares.h"
 #include "arvore_b_estrela.h"
-#include "auxiliares.h"
 
 #define M 5
 #define TAM_PAGINA 76
